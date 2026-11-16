@@ -32,7 +32,6 @@ make check         # ruff, mypy, eslint, tsc, pytest, vitest
 | Schema | PostgreSQL with Alembic. A PII-free `reporting` schema is the only thing the read-only agent role can see. |
 | KPI API | FastAPI endpoints for occupancy, rent roll, delinquency aging, lease expirations, NOI and work-order SLA, all with property, date and as-of filters |
 | Dashboard | React, TypeScript, Vite, Tailwind and Recharts. Portfolio overview, property drill-down, URL-based filters, table view for every chart, dark mode. |
-
 | RAG | 150 synthetic property documents in Pinecone. Baseline: fixed 1,000-character chunks with dense search. Improved: section chunks with title headers, a property filter and cross-encoder reranking. Hybrid BM25 is built and switchable, but it was measured to not help on this corpus. Labels are verbatim evidence spans. `make bench-rag` runs the ablation with bootstrap CIs. |
 
 ### RAG benchmark (from [BENCHMARKS.md](BENCHMARKS.md), 89 test questions)
