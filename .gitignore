@@ -1,0 +1,32 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# node
+node_modules/
+web/dist/
+*.tsbuildinfo
+
+# artifacts (regenerable from seeded scripts)
+artifacts/
+mlruns/
+mlartifacts/
+data/out/
+ml/feature_repo/data/
+*.parquet
+ray_results/
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/

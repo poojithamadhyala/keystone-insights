@@ -1,0 +1,71 @@
+# Profiles keep a 16 GB laptop usable (DECISIONS.md D-003):
+#   default:     postgres, redis, api, web
+#   graph:       + neo4j
+#   ml:          + mlflow
+#   monitoring:  + prometheus, grafana, alertmanager   (added in milestone 6)
+name: leaselens
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    env_file: ../.env
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+
+  api:
+    build: { context: .., dockerfile: infra/api.Dockerfile }
+    env_file: ../.env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      NEO4J_URI: bolt://neo4j:7687
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  web:
+    build: { context: .., dockerfile: infra/web.Dockerfile }
+    environment:
+      API_URL: http://api:8000
+    ports: ["5173:5173"]
+    depends_on: [api]
+
+  neo4j:
+    profiles: ["graph"]
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-leaselens-neo4j}
+      NEO4J_server_memory_heap_max__size: 1G
+      NEO4J_server_memory_pagecache_size: 512M
+    ports: ["7474:7474", "7687:7687"]
+    volumes: [neo4jdata:/data]
+
+  mlflow:
+    profiles: ["ml"]
+    image: ghcr.io/mlflow/mlflow:v2.17.2
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts --serve-artifacts
+    ports: ["5001:5000"]   # host 5000 is taken by macOS AirPlay Receiver
+    volumes: [mlflowdata:/mlflow]
+
+volumes:
+  pgdata:
+  neo4jdata:
+  mlflowdata:
