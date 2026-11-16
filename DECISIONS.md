@@ -96,3 +96,17 @@ The agent (milestone 3) runs inside the API, and CI imports the eval code. Torch
 
 ### D-026 Secret scan in CI and as a pre-commit hook
 API keys were once pasted into `.env.example`, a tracked file. They were caught before any commit. `infra/check_secrets.sh` now fails `make check`, CI and `git commit` if a key-like string (Anthropic, Pinecone, Slack webhook, AWS) appears in a tracked or staged file.
+
+## Re-scope (2026-11-16): small, useful, finished
+
+### D-027 Re-scoped for an AI Solutions Analyst application
+The target audience changed to a property-management company that values "small, useful, finished beats big and late" and reviewed PRs. Feature store, Graph RAG, drift monitoring and Ray are deferred to `later` issues. The remaining work is lean RAG → basic agent → weekly digest → public demo → polish, one release each.
+
+### D-028 Process: protected main, squash-merged PRs, shaping first
+Every change goes through a feature branch and PR (template + self-review comment), CI must pass, and merges are squash-only. **Solo-repo limit:** GitHub doesn't let authors approve their own PRs, so protection requires a PR and green CI (`python`, `web`), linear history and no force-push, for admins too, but zero approvals. The self-review comment stands in for the approval. Each feature has a one-page shape doc (`docs/shaping/`) with an appetite and go/no-go before any code. Setup is scripted in `infra/github/bootstrap.sh`, so it's reviewable and repeatable.
+
+### D-029 Cuts made while re-scoping
+* **Digest via Slack only:** email needs a sending provider plus domain verification; logged as a `later` issue.
+* **Render instead of Railway:** Railway has no permanent free tier.
+* **fastembed (ONNX) instead of torch:** the free API host has 512 MB of RAM. The same embedding and reranking models are used, and the benchmark is re-run on the deployed code path.
+* **Weekly schedule via GitHub Actions cron:** Render's cron jobs aren't free, and Actions runs are visible to reviewers.
