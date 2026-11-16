@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.agent.router import router as agent_router
+from api.digest.router import router as digest_router
 from api.kpis.router import router as kpis_router
 
 app = FastAPI(title="LeaseLens API", version="0.1.0")
@@ -13,6 +14,7 @@ app.add_middleware(
 )
 app.include_router(kpis_router)
 app.include_router(agent_router)
+app.include_router(digest_router)
 
 
 @app.get("/health")

@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     leaselens_model: str = "claude-opus-5-5"
     agent_prompt_version: str = "v1"
+    slack_webhook_url: str = ""
+    digest_run_token: str = ""
+    digest_send_enabled: bool = True
     seed: int = 42
 
     @property
