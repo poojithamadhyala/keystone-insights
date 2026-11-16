@@ -1,0 +1,34 @@
+name: weekly-digest
+# Builds and sends the weekly portfolio digest every Monday 13:00 UTC (8 a.m. US Central) by
+# calling the deployed API. Also runnable by hand from the Actions tab.
+# Repo secrets: DIGEST_API_URL (e.g. https://<api-host>) and DIGEST_RUN_TOKEN (same value as the
+# API's DIGEST_RUN_TOKEN). Until the API is deployed (public-demo step), the job skips cleanly.
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Build and send digest
+        env:
+          API_URL: ${{ secrets.DIGEST_API_URL }}
+          TOKEN: ${{ secrets.DIGEST_RUN_TOKEN }}
+        run: |
+          if [ -z "$API_URL" ] || [ -z "$TOKEN" ]; then
+            echo "::notice::DIGEST_API_URL / DIGEST_RUN_TOKEN not set yet; skipping (API not deployed)."
+            exit 0
+          fi
+          # A free-tier API may be asleep: allow a slow first response.
+          status=$(curl -sS -o response.json -w '%{http_code}' --max-time 180 \
+            -X POST "$API_URL/digest/run" -H "Authorization: Bearer $TOKEN")
+          echo "HTTP $status"
+          jq '{id, as_of, narrative_ok, delivery_status}' response.json || cat response.json
+          [ "$status" = "200" ] || exit 1
+          [ "$(jq -r .delivery_status response.json)" = "sent" ] || { echo "::warning::digest built but not sent"; exit 1; }
