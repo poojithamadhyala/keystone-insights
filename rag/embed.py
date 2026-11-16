@@ -1,49 +1,55 @@
-"""Local models on the best available device (CUDA > MPS > CPU, see common/device.py).
+"""Local models via fastembed (ONNX Runtime, CPU). No torch, so the same code fits the free
+512 MB API host, and what we benchmark is what we deploy (DECISIONS.md D-030).
 
-* Dense: BAAI/bge-small-en-v1.5 (384-d, about 33M params). Small enough to embed the whole corpus
-  in seconds on an M4 and good on retrieval benchmarks for its size. BGE wants an instruction
-  prefix on queries, but not on passages.
-* Reranker: cross-encoder/ms-marco-MiniLM-L-6-v2 scores (query, passage) pairs jointly.
-  That is more accurate than comparing two independent embeddings, but too slow to run over the
-  whole corpus, so it only reorders the top candidates.
+* Dense: BAAI/bge-small-en-v1.5 (384-d). BGE expects an instruction prefix on queries only.
+  NOTE: fastembed's `query_embed()` does NOT add this prefix (verified: identical to `embed(q)`),
+  so we prepend it ourselves. `test_query_prefix_is_applied` pins this.
+* Reranker: ms-marco-MiniLM-L-6-v2 cross-encoder scores (query, passage) pairs jointly. That's
+  more accurate than comparing embeddings but too slow for the whole corpus, so it only reorders
+  the top candidates. Scores match the sentence-transformers version to 3 decimals.
 """
 
 from __future__ import annotations
 
 from functools import lru_cache
-
-from common.device import best_device
+from typing import Any
 
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"
-RERANK_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+RERANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 DIM = 384
+# Small rerank batches keep ONNX Runtime's working memory low: batch 4 peaked at 377 MB vs
+# 561 MB at the default 64, and was faster (less padding). Measured in DECISIONS.md D-031.
+RERANK_BATCH = 4
 
 
 @lru_cache
-def _embedder():  # type: ignore[no-untyped-def]
-    from sentence_transformers import SentenceTransformer
+def _embedder() -> Any:
+    from fastembed import TextEmbedding
 
-    return SentenceTransformer(EMBED_MODEL, device=best_device())
+    return TextEmbedding(EMBED_MODEL)
 
 
 @lru_cache
-def _reranker():  # type: ignore[no-untyped-def]
-    from sentence_transformers import CrossEncoder
+def _reranker() -> Any:
+    from fastembed.rerank.cross_encoder import TextCrossEncoder
 
-    return CrossEncoder(RERANK_MODEL, device=best_device())
+    return TextCrossEncoder(RERANK_MODEL)
+
+
+def query_text(text: str) -> str:
+    return QUERY_PREFIX + text
 
 
 def embed_passages(texts: list[str], batch_size: int = 64) -> list[list[float]]:
-    vecs = _embedder().encode(texts, batch_size=batch_size, normalize_embeddings=True)
-    return [v.tolist() for v in vecs]
+    return [v.tolist() for v in _embedder().embed(texts, batch_size=batch_size)]
 
 
 def embed_query(text: str) -> list[float]:
-    return _embedder().encode(QUERY_PREFIX + text, normalize_embeddings=True).tolist()
+    return next(iter(_embedder().embed([query_text(text)]))).tolist()
 
 
 def rerank_scores(query: str, passages: list[str]) -> list[float]:
     if not passages:
         return []
-    return [float(s) for s in _reranker().predict([(query, p) for p in passages])]
+    return [float(s) for s in _reranker().rerank(query, passages, batch_size=RERANK_BATCH)]

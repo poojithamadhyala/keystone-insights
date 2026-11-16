@@ -1,4 +1,4 @@
-"""RAG unit tests. None need torch, Pinecone or an API key, so they run in CI."""
+"""RAG unit tests. None need model downloads, Pinecone or an API key, so they run in CI."""
 
 import json
 import math
@@ -10,10 +10,10 @@ from data.generate import generate
 from evals.rag.apply_review import parse as parse_review
 from evals.rag.generate_questions import locate
 from evals.rag.metrics import Gold, Retrieved, is_relevant, score_question
+from rag import embed, retrieve
 from rag.chunking import fixed_chunks, structure_chunks
 from rag.documents import Doc, generate_docs
-from rag.retrieve import parse_filters
-from rag.sparse import BM25, tokenize
+from rag.retrieve import BASELINE, IMPROVED
 
 
 @pytest.fixture(scope="module")
@@ -66,29 +66,6 @@ def test_structure_chunks_follow_sections(docs: list[Doc]) -> None:
     assert all(c.text.count("\n## ") == 0 for c in chunks)  # never spans two sections
 
 
-# ------------------------------------------------------------------ BM25
-def test_bm25_scores_term_matches_and_normalises() -> None:
-    corpus = ["quiet hours start at ten", "pets require a deposit", "parking permits cost fifty"]
-    bm = BM25().fit(corpus)
-    q = bm.encode_query("what are the quiet hours")
-    scores = []
-    for text in corpus:
-        dv = bm.encode_doc(text)
-        dd = dict(zip(dv["indices"], dv["values"], strict=True))
-        assert math.isclose(sum(v * v for v in dv["values"]), 1.0, rel_tol=1e-9)
-        scores.append(
-            sum(v * dd.get(i, 0.0) for i, v in zip(q["indices"], q["values"], strict=True))
-        )
-    assert scores[0] > 0 and scores[1] == scores[2] == 0
-    assert "the" not in tokenize("the quiet hours")
-
-
-def test_bm25_roundtrip(tmp_path: Path) -> None:
-    bm = BM25().fit(["alpha beta", "beta gamma"])
-    bm.save(tmp_path / "b.json")
-    assert BM25.load(tmp_path / "b.json").encode_doc("beta gamma") == bm.encode_doc("beta gamma")
-
-
 # ------------------------------------------------------------------ metrics
 def test_relevance_requires_half_the_span() -> None:
     g = Gold("d1", 100, 200)
@@ -107,14 +84,7 @@ def test_score_question_uses_first_relevant_rank() -> None:
     assert score_question([], g) == {"recall@5": 0, "mrr@10": 0, "ndcg@10": 0, "dochit@5": 0}
 
 
-# ------------------------------------------------------------------ query parsing & review
-def test_property_filter_keeps_portfolio_docs() -> None:
-    f = parse_filters("What are the quiet hours at Maple Court?")
-    assert f == {"property_id": {"$in": [1, 0]}}  # doc-type filter off by default (D-021)
-    assert "doc_type" in parse_filters("Maple Court quiet hours", doc_types=True)
-    assert parse_filters("How do I handle a frozen pipe?") == {}
-
-
+# ------------------------------------------------------------------ review
 def test_review_parser() -> None:
     text = "## q001 (lease)\n\n**Q:** x\n\nverdict: ok\n\n## q002 (sop)\nverdict: bad wrong unit\n"
     assert parse_review(text) == {"q001": "ok", "q002": "bad wrong unit"}
@@ -138,3 +108,47 @@ def test_eval_labels_still_match_documents(docs: list[Doc]) -> None:
     assert len(rows) >= 100
     for r in rows:
         assert by_id[r["doc_id"]].text[r["span_start"] : r["span_end"]] == r["evidence"], r["qid"]
+
+
+# ------------------------------------------------------------------ retrieval (no network)
+def test_query_prefix_is_applied(monkeypatch: pytest.MonkeyPatch) -> None:
+    """fastembed's query_embed() does NOT add BGE's instruction prefix, so embed_query must."""
+    seen: list[str] = []
+
+    class FakeEmbedder:
+        def embed(self, texts: list[str]):  # type: ignore[no-untyped-def]
+            seen.extend(texts)
+            return iter([__import__("numpy").zeros(3)])
+
+    monkeypatch.setattr(embed, "_embedder", lambda: FakeEmbedder())
+    embed.embed_query("quiet hours")
+    assert seen == [embed.QUERY_PREFIX + "quiet hours"]
+
+
+class _Match:
+    def __init__(self, i: int) -> None:
+        self.id, self.score = f"c{i}", 1.0 - i / 100
+        self.metadata = {"doc_id": f"d{i}", "start": 0, "end": 10, "title": "T",
+                         "section": "S", "text": f"passage {i}"}  # fmt: skip
+
+
+def test_improved_reranks_a_larger_pool(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[dict] = []
+
+    class FakeIndex:
+        def query(self, **kw):  # type: ignore[no-untyped-def]
+            calls.append(kw)
+            return type("R", (), {"matches": [_Match(i) for i in range(kw["top_k"])]})()
+
+    monkeypatch.setattr(retrieve, "_index", lambda: FakeIndex())
+    monkeypatch.setattr(retrieve, "embed_query", lambda q: [0.0])
+    # reranker prefers later passages: reverses the dense order
+    monkeypatch.setattr(retrieve, "rerank_scores", lambda q, ps: [float(i) for i in range(len(ps))])
+
+    base = retrieve.retrieve("q", BASELINE, k=5)
+    assert calls[-1]["top_k"] == 5 and calls[-1]["namespace"] == "fixed"
+    assert [h.chunk_id for h in base] == ["c0", "c1", "c2", "c3", "c4"]
+
+    imp = retrieve.retrieve("q", IMPROVED, k=5)
+    assert calls[-1]["top_k"] == 30 and calls[-1]["namespace"] == "structured"
+    assert [h.chunk_id for h in imp] == ["c29", "c28", "c27", "c26", "c25"]

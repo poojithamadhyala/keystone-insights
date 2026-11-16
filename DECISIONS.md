@@ -110,3 +110,21 @@ Every change goes through a feature branch and PR (template + self-review commen
 * **Render instead of Railway:** Railway has no permanent free tier.
 * **fastembed (ONNX) instead of torch:** the free API host has 512 MB of RAM. The same embedding and reranking models are used, and the benchmark is re-run on the deployed code path.
 * **Weekly schedule via GitHub Actions cron:** Render's cron jobs aren't free, and Actions runs are visible to reviewers.
+
+## Lean RAG (v0.2.0)
+
+### D-030 One baseline, one improved method, served with fastembed (ONNX)
+Retrieval is now exactly two methods: *baseline* (fixed 1,000-character chunks, dense) and *improved* (section chunks with title headers, dense top-30, cross-encoder rerank). BM25, filters and the ablation ladder are removed; their measured null results stay in D-021/D-022. Torch and sentence-transformers are replaced by fastembed, with the same two models run on ONNX Runtime on CPU, so the benchmarked code is the code the 512 MB API host runs. Parity was checked before switching: passage embeddings had cosine 1.0, and reranker scores were identical to 3 decimals. **Trap found:** fastembed's `query_embed()` does *not* add BGE's query instruction prefix (its output equals `embed(q)`), so `embed_query` prepends it explicitly, and a test pins this. Results after the switch: improved method unchanged (Recall@5 0.989, MRR 0.946); baseline MRR 0.555 → 0.553, within ANN run-to-run variation.
+
+### D-031 Rerank in batches of 4 to fit the free host
+The first footprint measurement failed the shape doc's go/no-go (around 400 MB). Peak RSS was 561–647 MB, because ONNX Runtime sizes its working memory for the whole batch (fastembed's default is 64). Sweep (20 queries × 30 passages, macOS):
+
+| rerank batch | threads | peak RSS | ms/query |
+|---|---|---|---|
+| 64 | default | 561 MB | 235 |
+| 8 | default | 434 MB | 219 |
+| 4 | default | 377 MB | 204 |
+| 4 | 2 | 376 MB | 263 |
+| 2 | 2 | 366 MB | 247 |
+
+We chose batch 4 with default threads: the lowest peak that fits without a latency cost (it's faster, because there's less padding). `make bench-rag` now reports the serving footprint from a fresh process (`rag/footprint.py`): 376 MB. Linux memory accounting differs from macOS, so it is re-measured on the host in the public-demo step.

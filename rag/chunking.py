@@ -29,7 +29,7 @@ class Chunk:
     start: int
     end: int
     text: str  # doc.text[start:end]
-    embed_text: str  # what gets embedded / BM25-encoded
+    embed_text: str  # what gets embedded
 
 
 def _make(doc: Doc, i: int, start: int, end: int, section: str, header: bool) -> Chunk:
