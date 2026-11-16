@@ -1,0 +1,56 @@
+// Typed client for the FastAPI KPI endpoints (mirrors api/kpis/router.py models).
+
+export interface Meta { as_of: string; seed: number; first_month: string }
+export interface Property {
+  id: number; name: string; city: string; state: string
+  property_type: string; year_built: number; units: number
+}
+export interface OccupancyRow {
+  property_id: number; property: string; units: number; occupied: number; occupancy: number
+}
+export interface Occupancy {
+  as_of: string; by_property: OccupancyRow[]
+  trend: { month: string; occupancy: number | null }[]
+}
+export interface AgingRow {
+  bucket: '0-30' | '31-60' | '61-90' | '90+'; current_resident: boolean
+  amount: number; tenants: number
+}
+export interface ExpirationRow {
+  month: string; property_id: number; property: string; leases: number; monthly_rent: number
+}
+export interface NoiRow {
+  property_id: number; property: string; month: string; revenue: number
+  operating_expenses: number; maintenance: number; noi: number
+}
+export interface SlaRow {
+  grp: string; tickets: number; judged: number; met: number
+  sla_rate: number | null; median_hours: number | null
+}
+export interface RentRollRow {
+  property: string; unit_id: number; unit_number: string; unit_type: string; sqft: number
+  market_rent: number; lease_id: number | null; tenant: string | null
+  start_date: string | null; end_date: string | null; monthly_rent: number | null; balance: number
+}
+export interface RentRoll { as_of: string; total: number; rows: RentRollRow[] }
+
+export interface Scope {
+  propertyIds: number[] // empty = whole portfolio
+  start: string // YYYY-MM-01
+  end: string // YYYY-MM-01 (inclusive)
+}
+
+export function scopeQuery(scope: Scope, extra: Record<string, string | number> = {}): string {
+  const p = new URLSearchParams()
+  scope.propertyIds.forEach((id) => p.append('property_id', String(id)))
+  p.set('start', scope.start)
+  p.set('end', scope.end)
+  Object.entries(extra).forEach(([k, v]) => p.set(k, String(v)))
+  return p.toString()
+}
+
+export async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(`/api${path}`, { signal })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${path}`)
+  return (await res.json()) as T
+}

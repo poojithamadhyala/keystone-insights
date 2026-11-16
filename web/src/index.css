@@ -1,1 +1,60 @@
 @import "tailwindcss";
+
+/* Design tokens (dataviz reference palette). Components use roles, never raw hex, so dark
+   mode is a token swap. Series slots are assigned in fixed order (series-1 first). */
+@theme {
+  --color-page: #f9f9f7;
+  --color-surface: #fcfcfb;
+  --color-ink: #0b0b0b;
+  --color-ink-2: #52514e;
+  --color-muted: #898781;
+  --color-grid: #e1e0d9;
+  --color-axis: #c3c2b7;
+  --color-border: rgba(11, 11, 11, 0.1);
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #1baf7a;
+  --color-good: #006300;
+  --color-critical: #d03b3b;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --color-page: #0d0d0d;
+    --color-surface: #1a1a19;
+    --color-ink: #f0efec;
+    --color-ink-2: #c3c2b7;
+    --color-grid: #2c2c2a;
+    --color-axis: #383835;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-series-1: #3987e5;
+    --color-series-2: #d95926;
+    --color-series-3: #199e70;
+    --color-good: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-page: #0d0d0d;
+  --color-surface: #1a1a19;
+  --color-ink: #f0efec;
+  --color-ink-2: #c3c2b7;
+  --color-grid: #2c2c2a;
+  --color-axis: #383835;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+  --color-series-3: #199e70;
+  --color-good: #0ca30c;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: help install env up up-all down logs test lint typecheck check lock-web
+.PHONY: help install env up up-all down logs seed demo test lint typecheck check lock-web
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -23,6 +23,12 @@ down:  ## Stop all services
 
 logs:  ## Tail service logs
 	$(COMPOSE) logs -f --tail=100
+
+seed:  ## Migrate + load synthetic data (runs inside the api container; SEED from .env)
+	$(COMPOSE) exec api python -m data.seed
+
+demo: up seed  ## Start the stack with data and print URLs (grows with each milestone)
+	@echo "Dashboard: http://localhost:5173   API docs: http://localhost:8000/docs"
 
 test:  ## Python + web unit tests
 	uv run pytest -q

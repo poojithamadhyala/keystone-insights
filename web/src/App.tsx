@@ -1,10 +1,27 @@
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Dashboard } from './Dashboard'
+
+export function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen">
+      <header className="border-b border-border bg-surface px-6 py-3">
+        <span className="text-lg font-semibold">LeaseLens</span>
+        <span className="ml-3 text-sm text-muted">Portfolio reporting · synthetic data</span>
+      </header>
+      <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6">{children}</main>
+    </div>
+  )
+}
+
 export default function App() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b bg-white px-6 py-4">
-        <h1 className="text-xl font-semibold">LeaseLens</h1>
-        <p className="text-sm text-slate-500">Portfolio reporting · synthetic data</p>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Shell>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/properties/:propertyId" element={<Dashboard />} />
+        </Routes>
+      </Shell>
+    </BrowserRouter>
   )
 }
