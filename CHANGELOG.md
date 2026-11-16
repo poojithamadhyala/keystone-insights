@@ -53,7 +53,7 @@ All notable changes to this project are documented here. The format follows
   `make bench-rag`.
 - Secret scan in `make check`, CI and a pre-commit hook.
 
-[Unreleased]: https://github.com/OWNER/leaselens/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/OWNER/leaselens/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/OWNER/leaselens/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/OWNER/leaselens/releases/tag/v0.1.0
+[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/poojithamadhyala/keystone-insights/releases/tag/v0.1.0
