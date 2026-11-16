@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Public-demo hosting: `render.yaml` (API on Render), `web/vercel.json` (web on Vercel), Neon via
+  `DATABASE_URL` and `make seed-remote`; step-by-step `docs/deploy.md`.
+- Demo safeguards (`DEMO_MODE`): per-IP rate limits, $2/day Claude spend cap stored in Postgres,
+  labeled recorded answers when over budget or without a key, Send now disabled for visitors.
+- Wake-up screen while the free API host starts; "Public demo" badge; clearer limit messages.
+- CI builds the web app and scans the bundle for secrets.
+
+### Fixed
+- Agent queries on managed Postgres (non-superuser): migration 0004 grants the read-only role to
+  the app user (`permission denied to set role` on Postgres 16+).
+- Digest fallback footer wording.
+
 ## [0.4.0] - 2026-11-16
 
 ### Added

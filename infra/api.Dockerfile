@@ -16,4 +16,6 @@ COPY data ./data
 COPY rag ./rag
 COPY prompts ./prompts
 EXPOSE 8000
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Migrations are idempotent, so running them on every boot keeps a hosted DB (Neon) current.
+# Render sets $PORT; locally it defaults to 8000.
+CMD ["sh", "-c", "alembic -c data/alembic.ini upgrade head && exec uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

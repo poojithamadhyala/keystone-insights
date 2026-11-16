@@ -94,10 +94,13 @@ def write_narrative(client: Any, f: dict[str, Any]) -> tuple[str, float]:
 def build_digest(engine: Engine, client: Any, as_of: date, trigger: str) -> dict[str, Any]:
     facts = build_facts(engine, as_of)
     narrative, cost, error = "", 0.0, None
-    try:
-        narrative, cost = write_narrative(client, facts)
-    except Exception as e:  # API down, refusal, ...: the digest still goes out, facts-only
-        error = f"narrative unavailable: {type(e).__name__}"
+    if client is None:  # no API key, or the demo's daily AI budget is spent
+        error = "was skipped (AI budget or key unavailable)"
+    else:
+        try:
+            narrative, cost = write_narrative(client, facts)
+        except Exception as e:  # API down, refusal, ...: the digest still goes out, facts-only
+            error = f"was unavailable ({type(e).__name__})"
     bad = check_narrative(narrative, facts) if narrative else []
     ok = bool(narrative) and not bad
     body = narrative if ok else facts_only_text(facts)

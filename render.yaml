@@ -1,0 +1,43 @@
+# Render Blueprint for the public demo API (docs/deploy.md). Free plan: 512 MB RAM, sleeps when
+# idle. Secrets use `sync: false`: Render prompts for them in its dashboard, so they never live in
+# this repo.
+services:
+  - type: web
+    name: leaselens-api
+    runtime: docker
+    plan: free
+    region: virginia            # same AWS region as the Neon database (us-east-1)
+    dockerfilePath: ./infra/api.Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    branch: main
+    autoDeploy: true            # every merge to main redeploys
+    envVars:
+      - key: DATABASE_URL       # Neon connection string (sslmode=require)
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX
+        value: leaselens-docs
+      - key: LEASELENS_MODEL
+        value: claude-opus-5-5
+      - key: CORS_ORIGINS       # the Vercel URL, e.g. https://leaselens.vercel.app
+        sync: false
+      - key: DEMO_MODE
+        value: "true"
+      - key: TRUST_PROXY        # client IP from Render's X-Forwarded-For (rate limits)
+        value: "true"
+      - key: DAILY_SPEND_CAP_USD
+        value: "2"
+      - key: AGENT_QUESTIONS_PER_HOUR
+        value: "10"
+      - key: DIGEST_BUILDS_PER_HOUR
+        value: "3"
+      - key: DIGEST_SEND_ENABLED  # visitors can't post to Slack; the weekly schedule still can
+        value: "false"
+      - key: DIGEST_RUN_TOKEN   # same value as the GitHub secret used by the weekly Action
+        sync: false
+      - key: SLACK_WEBHOOK_URL
+        sync: false

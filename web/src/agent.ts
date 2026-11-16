@@ -1,4 +1,5 @@
-// Client for POST /api/agent/chat (server-sent events over a fetch stream; EventSource can't POST).
+// Client for POST /agent/chat (server-sent events over a fetch stream; EventSource can't POST).
+import { API_BASE, errorMessage } from './api'
 
 export interface SqlResult {
   type: 'sql_result'; id: string; purpose: string; sql: string
@@ -16,8 +17,8 @@ export type AgentEvent =
   | SqlResult
   | { type: 'doc_results'; query: string; passages: Passage[] }
   | Report
-  | { type: 'refusal' | 'error'; message: string }
-  | { type: 'done'; cost_usd: number; model: string; prompt_version: string }
+  | { type: 'refusal' | 'error' | 'notice'; message: string }
+  | { type: 'done'; cost_usd: number; model?: string; prompt_version?: string; cached?: boolean }
 
 /** Parse complete SSE blocks out of `buffer`; returns the events and the unconsumed remainder. */
 export function parseSse(buffer: string): { events: AgentEvent[]; rest: string } {
@@ -45,13 +46,14 @@ export async function streamChat(
   onEvent: (e: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await fetch('/api/agent/chat', {
+  const res = await fetch(`${API_BASE}/agent/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, conversation_id: conversationId }),
     signal,
   })
-  if (!res.ok || !res.body) throw new Error(`${res.status} ${res.statusText}`)
+  if (!res.ok) throw new Error(await errorMessage(res))
+  if (!res.body) throw new Error('empty response')
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''

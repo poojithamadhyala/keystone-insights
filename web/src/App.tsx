@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { ApiGate, useApiInfo } from './ApiGate'
 import { ChatPanel } from './ChatPanel'
 import { Dashboard } from './Dashboard'
 import { DigestPage } from './DigestPage'
@@ -9,6 +10,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const [chatOpen, setChatOpen] = useState(false)
+  const { demo_mode } = useApiInfo()
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3 sm:px-6">
@@ -18,6 +20,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <NavLink to="/" end className={navClass}>Dashboard</NavLink>
             <NavLink to="/digest" className={navClass}>Weekly digest</NavLink>
           </nav>
+          {demo_mode && (
+            <span className="hidden rounded border border-border px-2 py-0.5 text-xs text-muted md:inline"
+                  title="Synthetic data. AI answers are rate-limited and capped per day.">
+              Public demo · synthetic data
+            </span>
+          )}
         </div>
         <button type="button" onClick={() => setChatOpen((v) => !v)} aria-expanded={chatOpen}
                 className="rounded-md bg-ink px-3 py-1.5 text-sm text-surface">
@@ -32,7 +40,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <ApiGate>
+      <BrowserRouter>
       <Shell>
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -40,6 +49,7 @@ export default function App() {
           <Route path="/digest" element={<DigestPage />} />
         </Routes>
       </Shell>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ApiGate>
   )
 }

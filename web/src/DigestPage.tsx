@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { API_BASE } from './api'
+import { useApiInfo } from './ApiGate'
 import { ChartCard, DataTable, StatTile } from './components'
 import { money, moneyCompact } from './format'
 
@@ -29,11 +31,12 @@ export function mrkdwn(line: string): ReactNode[] {
 }
 
 async function call<T>(path: string, method = 'GET'): Promise<{ status: number; body: T | { detail: string } }> {
-  const res = await fetch(`/api${path}`, { method })
+  const res = await fetch(`${API_BASE}${path}`, { method })
   return { status: res.status, body: (await res.json()) as T }
 }
 
 export function DigestPage() {
+  const { send_enabled } = useApiInfo()
   const [run, setRun] = useState<DigestRun | null>(null)
   const [runs, setRuns] = useState<RunSummary[]>([])
   const [state, setState] = useState<'loading' | 'empty' | 'ready' | 'error'>('loading')
@@ -93,12 +96,16 @@ export function DigestPage() {
                   className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm disabled:opacity-40">
             {busy === 'build' ? 'Building…' : 'Rebuild preview'}
           </button>
-          <button type="button" onClick={() => void send()} disabled={busy !== null || !run}
+          <button type="button" onClick={() => void send()} disabled={busy !== null || !run || !send_enabled}
+                  title={send_enabled ? undefined : 'Sending is disabled on the public demo (preview only)'}
                   className="rounded-md bg-ink px-3 py-1.5 text-sm text-surface disabled:opacity-40">
             {busy === 'send' ? 'Sending…' : 'Send now'}
           </button>
         </div>
       </div>
+      {!send_enabled && (
+        <p className="text-xs text-muted">Public demo: Send now is turned off. The preview is exactly what the weekly Slack post would contain.</p>
+      )}
       {notice && <p role="status" className="rounded-md border border-border bg-surface px-3 py-2 text-sm">{notice}</p>}
 
       {state === 'loading' && <p className="text-sm text-muted">Loading…</p>}

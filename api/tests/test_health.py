@@ -4,4 +4,5 @@ from api.main import app
 
 
 def test_health() -> None:
-    assert TestClient(app).get("/health").json() == {"status": "ok"}
+    body = TestClient(app).get("/health").json()
+    assert body["status"] == "ok" and body["demo_mode"] is False

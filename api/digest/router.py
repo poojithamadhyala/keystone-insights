@@ -13,9 +13,10 @@ import hmac
 from functools import lru_cache
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy import Engine
 
+from api import safeguards
 from api.db import get_engine
 from api.digest import service, slack
 from api.kpis.router import dataset_as_of
@@ -57,8 +58,13 @@ def latest(engine: EngineDep) -> dict[str, Any]:
 
 
 @router.post("/build")
-def build(engine: EngineDep, client: ClientDep) -> dict[str, Any]:
-    return service.build_digest(engine, client, dataset_as_of(engine), trigger="preview")
+def build(request: Request, engine: EngineDep, client: ClientDep) -> dict[str, Any]:
+    safeguards.enforce_rate_limit(request, "digest", get_settings().digest_builds_per_hour)
+    # Over the demo's daily budget: no model call; the digest falls back to the facts-only text.
+    use = client if safeguards.budget_available(engine) else None
+    run = service.build_digest(engine, use, dataset_as_of(engine), trigger="preview")
+    safeguards.record_spend(engine, run.get("cost_usd") or 0)
+    return run
 
 
 @router.post("/{run_id}/send")
@@ -83,6 +89,7 @@ def scheduled_run(
     if not token or not hmac.compare_digest(supplied, token):  # constant-time comparison
         raise HTTPException(401, "invalid or missing token")
     run = service.build_digest(engine, client, dataset_as_of(engine), trigger="schedule")
+    safeguards.record_spend(engine, run.get("cost_usd") or 0)
     return _deliver(engine, run, transport)
 
 
