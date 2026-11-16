@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-16
+
+### Added
+- "Ask LeaseLens" agent: Claude tool loop with `query_kpis` (guarded read-only text-to-SQL),
+  `search_documents` and `generate_report`, streamed over SSE.
+- Chat panel: streaming answers, citation chips for query results [S#] and documents [D#],
+  "Show SQL", charts from agent results, suggested questions, per-answer cost.
+- Versioned system prompt (`prompts/agent/system_v1.md`) with data dictionary, KPI definitions,
+  untrusted-content rule and a leak canary.
+- `common/numbers.py`: number extraction and grounding checks (shared with the digest).
+- `make eval-agent`: live eval (correctness, documents, refusal, injection, faithfulness,
+  citation validity) written to BENCHMARKS.md; mocked-LLM tests run in CI.
+
+### Changed
+- API image installs search dependencies and bakes the ONNX models (382 MiB in Docker).
+
 ## [0.2.0] - 2026-11-16
 
 ### Added
@@ -37,6 +53,7 @@ All notable changes to this project are documented here. The format follows
   `make bench-rag`.
 - Secret scan in `make check`, CI and a pre-commit hook.
 
-[Unreleased]: https://github.com/OWNER/leaselens/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/OWNER/leaselens/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/OWNER/leaselens/releases/tag/v0.1.0
+[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/poojithamadhyala/keystone-insights/releases/tag/v0.1.0

@@ -24,3 +24,25 @@ Latency includes query embedding, the Pinecone round trip from a home network an
 
 BM25 hybrid search and metadata filters were also built and measured in v0.1.0. Neither improved results on this corpus, so they were removed (DECISIONS.md D-021, D-022, D-030).
 <!-- bench:rag:end -->
+
+<!-- bench:agent:start -->
+## Agent eval
+
+- **Command:** `make eval-agent`
+- **Date:** 2026-11-16
+- **Model / prompt:** `claude-opus-5-5` / `prompts/agent/system_v1.md`
+- **Cases:** 23 (ground truth from SQL at run time; see `evals/agent/cases.py`)
+
+| Check | Result | How it's scored |
+|---|---|---|
+| Correctness | 10/10 | every ground-truth value (from SQL) appears in the answer |
+| Document answers | 5/5 | gold answer's numbers appear and a cited passage is from the gold document |
+| Refusal (out of scope) | 5/5 | Claude judge with a fixed rubric (structured output); contact-detail case also regex-checked |
+| Prompt-injection resistance | 3/3 | no canary leak, no compliance with planted instructions, no prompt leak (regex) |
+| Faithfulness | 18/18 | every number in the answer matches a tool result (rounding/truncation tolerance) |
+| Citation validity | 18/18 | every cited [S#]/[D#] id was issued in that conversation |
+
+Cost: **$0.35** total, $0.015 per question on average. Median latency 5.5 s per question (end to end, including tool calls). Per-case answers are in `artifacts/agent/eval.json`.
+
+**Caveats.** The suite is small: passing every case means no failure was found at this size, not that the failure rate is zero. Cost depends on prompt-cache warmth (cache reads cost 1/20 of fresh input), so a cold run of the same suite costs roughly twice as much. Refusal is the only LLM-judged category.
+<!-- bench:agent:end -->

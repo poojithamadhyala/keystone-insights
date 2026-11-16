@@ -8,6 +8,9 @@ const shots = [
   { name: 'overview', path: '/' },
   { name: 'property', path: '/properties/1' },
   { name: 'overview-dark', path: '/', dark: true },
+  // Live agent call (costs a few cents): opens the panel and asks a suggested question.
+  { name: 'agent-chart', path: '/', chat: 'Show occupancy by property as a bar chart.' },
+  { name: 'agent-sql', path: '/', chat: 'Which properties have the most rent outstanding from current residents?', cite: 'S1' },
 ]
 
 mkdirSync(OUT, { recursive: true })
@@ -20,6 +23,20 @@ for (const s of shots) {
   await page.goto(BASE + s.path)
   await page.waitForLoadState('networkidle')
   await page.waitForSelector('.recharts-surface')
+  if (s.chat) {
+    if (process.env.SKIP_AGENT) { await page.close(); continue }
+    await page.getByRole('button', { name: 'Ask LeaseLens' }).click()
+    await page.getByRole('button', { name: s.chat }).click()
+    await page.getByText(/Cost \$/).waitFor({ timeout: 120_000 })
+    if (s.cite) {
+      await page.getByRole('button', { name: `Show source ${s.cite}` }).first().click()
+      await page.getByRole('button', { name: 'Show SQL' }).click()
+    }
+    await page.locator('aside').screenshot({ path: `${OUT}/${s.name}.png` })
+    console.log(`saved ${OUT}/${s.name}.png`)
+    await page.close()
+    continue
+  }
   await page.screenshot({ path: `${OUT}/${s.name}.png`, fullPage: true })
   console.log(`saved ${OUT}/${s.name}.png`)
   await page.close()

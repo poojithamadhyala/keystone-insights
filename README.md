@@ -2,7 +2,7 @@
 
 A property-management reporting platform with an AI agent that answers questions about portfolio data and documents. **All data is synthetic.** There are no real companies, people or properties.
 
-> Work in progress. Data, KPIs, dashboard and document search are done; the agent and weekly digest are next. The architecture diagram, benchmark table and limitations are filled in as later milestones land.
+> Work in progress. Data, KPIs, dashboard, document search and the AI agent are done; the weekly digest is next. The architecture diagram, benchmark table and limitations are filled in as later milestones land.
 
 ![Portfolio overview](docs/screenshots/overview.png)
 
@@ -42,5 +42,17 @@ make check         # ruff, mypy, eslint, tsc, pytest, vitest
 | Improved (section chunks + rerank) | 0.989 | 0.946 | 0.957 | 172 ms |
 
 RAG needs `PINECONE_API_KEY` in `.env`; run `make ingest` then `make bench-rag`.
+
+### AI agent: "Ask LeaseLens"
+
+<img src="docs/screenshots/agent-chart.png" alt="Agent answering with a chart and citations" width="360">
+
+Claude with three tools: `query_kpis` (read-only text-to-SQL behind four safety layers), `search_documents` and `generate_report`. Answers stream with citations to query results [S#] (rows and SQL one click away) and document passages [D#]. Eval from [BENCHMARKS.md](BENCHMARKS.md) (`make eval-agent`, 23 cases):
+
+| Correctness | Documents | Refusal | Injection | Faithfulness | Citations valid |
+|---|---|---|---|---|---|
+| 10/10 | 5/5 | 5/5 | 3/3 | 18/18 | 18/18 |
+
+A small suite: no failures found at this size, not a zero failure rate. The agent needs `ANTHROPIC_API_KEY` in `.env`.
 
 See [DECISIONS.md](DECISIONS.md) for design choices and [BENCHMARKS.md](BENCHMARKS.md) for measured results.

@@ -13,6 +13,8 @@ dependencies = [
   "faker>=30",
   "numpy>=1.26",
   "anthropic>=2.9",
+  "sqlglot>=30.32.0",
+  "sse-starlette>=3.7.0",
 ]
 
 # Heavy deps live in groups so the API image stays small (see DECISIONS.md D-002).
@@ -45,6 +47,10 @@ extend-exclude = ["web", "data/migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# Ground-truth SQL literals and rendered Markdown table rows read better unwrapped.
+"evals/agent/*.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
