@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "check-bundle": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
