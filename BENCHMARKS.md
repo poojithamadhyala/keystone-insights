@@ -46,3 +46,18 @@ Cost: **$0.35** total, $0.015 per question on average. Median latency 5.5 s per 
 
 **Caveats.** The suite is small: passing every case means no failure was found at this size, not that the failure rate is zero. Cost depends on prompt-cache warmth (cache reads cost 1/20 of fresh input), so a cold run of the same suite costs roughly twice as much. Refusal is the only LLM-judged category.
 <!-- bench:agent:end -->
+
+<!-- bench:digest:start -->
+## Weekly digest number check
+
+- **Command:** `make bench-digest`
+- **Date:** 2026-11-16
+- **Model / prompt:** `claude-opus-5-5` / `prompts/digest/narrative_v1.md`
+- **Dataset:** digest for the week ending 2026-10-31, built 10 times
+
+| Narratives passing the number check | Rejected numbers | Cost |
+|---|---|---|
+| 10/10 | none | $0.207 |
+
+Every number in the written summary must match a SQL fact (rounding or truncation to the written precision allowed; percentages only match percentage facts). A failed check doesn't stop the digest: it goes out as the facts-only version, flagged. The pass rate is how often readers get the written summary.
+<!-- bench:digest:end -->
