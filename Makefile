@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: help install env up up-all down logs seed demo test lint typecheck check lock-web secrets hooks docs ingest rag-questions rag-review bench-rag
+.PHONY: help install env up up-all down logs seed demo test lint typecheck check lock-web secrets hooks docs ingest rag-questions rag-review bench-rag eval-agent
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -71,3 +71,7 @@ rag-review:  ## Apply verdicts from evals/rag/REVIEW.md to questions.jsonl
 
 bench-rag:  ## RAG ablation ladder: Recall@5 / MRR / nDCG@10 -> BENCHMARKS.md
 	$(RAG) python -m evals.rag.bench
+
+# ---------------------------------------------------------------- Agent
+eval-agent:  ## Live agent eval (about $0.06 per case) -> BENCHMARKS.md
+	$(RAG) python -m evals.agent.run
