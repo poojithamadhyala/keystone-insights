@@ -9,6 +9,16 @@ All notable changes to this project are documented here. The format follows
 ### Added
 - Process: PR template, CLAUDE.md playbook, operator brief, shaping docs, labeled backlog and
   protected `main` (changes land by squash-merged PR only).
+- `make bench-rag` reports the search serving footprint (peak RSS of a fresh process).
+
+### Changed
+- RAG reduced to one baseline and one improved method (section chunks + cross-encoder rerank).
+- Embedding and reranking run on fastembed (ONNX, CPU) instead of torch; same models, same
+  retrieval quality, 376 MB serving footprint (fits a 512 MB host).
+
+### Removed
+- BM25 hybrid search, metadata filters and the ablation ladder (measured to add nothing;
+  see DECISIONS.md D-021, D-022, D-030).
 
 ## [0.1.0] - 2026-11-16
 
