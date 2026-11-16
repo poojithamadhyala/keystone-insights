@@ -36,6 +36,7 @@ make check         # secret scan, ruff, mypy, eslint, tsc, pytest, vitest (same 
 make seed          # reload synthetic data (idempotent)
 make ingest        # (re)index documents in Pinecone
 make bench-rag     # RAG benchmark -> rewrites its BENCHMARKS.md section
+make eval-agent    # live agent eval (~$0.35-0.70) -> rewrites its BENCHMARKS.md section
 make lock-web      # regenerate web/package-lock.json after any `npm install`
 ```
 
@@ -67,7 +68,10 @@ make lock-web      # regenerate web/package-lock.json after any `npm install`
 
 - Don't put keys anywhere but `.env` (gitignored). `make check`, CI and the pre-commit hook all
   scan for them.
-- Don't give the agent write access or access to the `public` schema.
+- Don't give the agent write access or access to the `public` schema. Any new agent SQL path
+  must go through `api/agent/sql_guard.run_readonly`.
+- Don't change the agent prompt in place once released: add `system_v2.md`, set
+  `AGENT_PROMPT_VERSION`, re-run `make eval-agent`.
 - Don't change `rag/documents.py` output without regenerating the eval labels. A test fails if
   labeled spans shift.
 - Don't hand-edit numbers in README or BENCHMARKS.md. Re-run the benchmark.

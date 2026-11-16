@@ -86,7 +86,17 @@ must be true before an operator signs off on it. All data is synthetic. The as-o
 | **Decision** | Renewal pricing (rent vs. market); collection follow-up per unit |
 | **Sign-off** | Unit count matches the property's units. The balance is that tenant's outstanding charges on that unit as of the as-of date. Vacant units show no tenant. *Verified by `test_rent_roll_balances`.* |
 
-## AI agent (step 2) and weekly digest (step 3)
+## AI agent: "Ask LeaseLens" (v0.3.0)
 
-_Filled in when those features ship: the questions they answer, the manual work they replace
-(time savings labeled as estimates), and their sign-off criteria._
+| | |
+|---|---|
+| **Questions** | Ad-hoc questions the dashboard doesn't answer directly: "Which Maple Court units owe more than one month's rent?", "Which vendor handled the most HVAC tickets that breached SLA in July?", "What does lease 383 say about late fees?", "Chart occupancy by property." |
+| **Personas** | Property manager (unit and lease detail, documents); asset director (cross-property comparisons, charts); accounting (ad-hoc AR questions) |
+| **Decision** | Same decisions as the dashboard, without waiting for an analyst to write SQL or dig through documents |
+| **What it can't do** | Change records, send messages, reveal tenant contact details (not in its data at all), answer questions outside the portfolio |
+| **Sign-off** | Every number traces to a cited query result [S#] (rows and SQL one click away) or document passage [D#]. Agent KPIs use the dashboard's definitions (charge-month aging, exclusive end dates, cash-basis NOI). Read-only by construction: SQL guard, then a read-only transaction as a view-only role. *Verified by `make eval-agent` (correctness, document answers, refusal, injection, faithfulness, citation validity; results in BENCHMARKS.md) and `api/tests/test_agent.py` (writes blocked even with the SQL guard disabled).* |
+| **Manual work it replaces (estimate)** | An analyst writing and checking a one-off SQL query or searching leases for a clause. *Estimate, not measured:* 10–30 minutes per question in a typical team, versus a median of about 5.5 s for the agent in the eval. |
+
+## Weekly digest (step 3)
+
+_Filled in when it ships._
