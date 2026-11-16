@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-16
+
 ### Added
 - Process: PR template, CLAUDE.md playbook, operator brief, shaping docs, labeled backlog and
   protected `main` (changes land by squash-merged PR only).
@@ -35,5 +37,6 @@ All notable changes to this project are documented here. The format follows
   `make bench-rag`.
 - Secret scan in `make check`, CI and a pre-commit hook.
 
-[Unreleased]: https://github.com/OWNER/leaselens/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/OWNER/leaselens/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/OWNER/leaselens/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/OWNER/leaselens/releases/tag/v0.1.0
