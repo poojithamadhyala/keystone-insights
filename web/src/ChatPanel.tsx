@@ -11,6 +11,7 @@ interface UserMsg { role: 'user'; text: string }
 export interface AssistantMsg {
   role: 'assistant'; text: string; steps: Step[]; sql: SqlResult[]; passages: Passage[]
   reports: Report[]; status: 'streaming' | 'done' | 'error'; error?: string; cost?: number
+  notice?: string
 }
 type Msg = UserMsg | AssistantMsg
 
@@ -35,6 +36,7 @@ export function reduce(msg: AssistantMsg, e: AgentEvent): AssistantMsg {
     case 'sql_result': return { ...msg, sql: [...msg.sql, e] }
     case 'doc_results': return { ...msg, passages: [...msg.passages, ...e.passages] }
     case 'report': return { ...msg, reports: [...msg.reports, e] }
+    case 'notice': return { ...msg, notice: e.message }
     case 'refusal':
     case 'error': return { ...msg, status: 'error', error: e.message }
     case 'done': return { ...msg, status: msg.status === 'error' ? 'error' : 'done', cost: e.cost_usd }
@@ -132,6 +134,9 @@ function AssistantView({ m }: { m: AssistantMsg }) {
   const openDoc = m.passages.find((p) => p.id === open)
   return (
     <div className="space-y-2">
+      {m.notice && (
+        <p className="rounded border border-border bg-grid px-2 py-1 text-xs text-ink-2" role="note">{m.notice}</p>
+      )}
       {m.steps.length > 0 && (
         <ul className="space-y-0.5 text-xs text-muted">
           {m.steps.map((s, i) => <li key={i}>✓ {s.label}</li>)}
@@ -154,7 +159,7 @@ function AssistantView({ m }: { m: AssistantMsg }) {
         </div>
       )}
       {m.error && <p className="text-sm text-critical" role="alert">{m.error}</p>}
-      {m.cost != null && <p className="text-[11px] text-muted">Cost ${m.cost.toFixed(3)}</p>}
+      {m.cost != null && m.cost > 0 && <p className="text-[11px] text-muted">Cost ${m.cost.toFixed(3)}</p>}
     </div>
   )
 }

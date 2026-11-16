@@ -1,5 +1,17 @@
 // Typed client for the FastAPI KPI endpoints (mirrors api/kpis/router.py models).
 
+/** API origin: the Vite dev proxy locally ('/api'), the Render URL on the public demo. */
+export const API_BASE = ((import.meta.env.VITE_API_URL as string | undefined) ?? '/api').replace(/\/$/, '')
+
+/** Turn a FastAPI error response into a readable message (e.g. the demo's 429 text). */
+export async function errorMessage(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { detail?: unknown }
+    if (typeof body.detail === 'string') return body.detail
+  } catch { /* not JSON */ }
+  return `${res.status} ${res.statusText}`
+}
+
 export interface Meta { as_of: string; seed: number; first_month: string }
 export interface Property {
   id: number; name: string; city: string; state: string
@@ -50,7 +62,7 @@ export function scopeQuery(scope: Scope, extra: Record<string, string | number> 
 }
 
 export async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`/api${path}`, { signal })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${path}`)
+  const res = await fetch(`${API_BASE}${path}`, { signal })
+  if (!res.ok) throw new Error(await errorMessage(res))
   return (await res.json()) as T
 }
