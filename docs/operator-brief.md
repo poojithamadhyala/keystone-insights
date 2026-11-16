@@ -97,6 +97,21 @@ must be true before an operator signs off on it. All data is synthetic. The as-o
 | **Sign-off** | Every number traces to a cited query result [S#] (rows and SQL one click away) or document passage [D#]. Agent KPIs use the dashboard's definitions (charge-month aging, exclusive end dates, cash-basis NOI). Read-only by construction: SQL guard, then a read-only transaction as a view-only role. *Verified by `make eval-agent` (correctness, document answers, refusal, injection, faithfulness, citation validity; results in BENCHMARKS.md) and `api/tests/test_agent.py` (writes blocked even with the SQL guard disabled).* |
 | **Manual work it replaces (estimate)** | An analyst writing and checking a one-off SQL query or searching leases for a clause. *Estimate, not measured:* 10–30 minutes per question in a typical team, versus a median of about 5.5 s for the agent in the eval. |
 
-## Weekly digest (step 3)
+## Weekly portfolio digest (v0.4.0)
 
-_Filled in when it ships._
+| | |
+|---|---|
+| **Questions** | What changed in delinquency this week, and where? Which leases expire in the next 90 days? Which work orders are breaching SLA right now, and which is the oldest? |
+| **Personas** | Asset director (Monday read in Slack); property managers (their property's movers, breaches to chase) |
+| **Decision** | Where to spend this week's follow-up time: collection calls, renewal outreach, vendor escalation |
+| **Sign-off** | Every number comes from SQL using the dashboard's definitions. The current-resident delinquency total equals the dashboard's "Delinquent (current residents)" tile for the same as-of date ($104,673.08 on 2026-10-31). The written summary is sent only if every number in it matches a fact; otherwise the facts-only version goes out, flagged. The preview is the exact stored text Slack receives. *Verified by `api/tests/test_digest.py` (hand-derived facts, planted wrong numbers, preview == payload) and `make bench-digest` (pass rate of the written summary).* |
+
+**Manual work it replaces.** Each Monday someone currently:
+1. exports the aging report, filters to current residents, and compares it with last week's export;
+2. runs the lease-expiration report for the next 90 days, then counts and totals rent by month and property;
+3. pulls open work orders, works out each one's age against its priority's SLA, and sorts by oldest;
+4. writes a summary for the team, copying numbers by hand, and posts it.
+
+*Estimate, not measured:* 45–90 minutes a week for an analyst or property manager, plus the
+risk of a mistyped number. The digest automates steps 1–4. A person only reviews the preview,
+or doesn't, since it's scheduled.

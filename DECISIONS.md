@@ -148,3 +148,20 @@ It extracts numbers from text (`$1.2K`, `94.4%`, `1,234.56`; dates, times, bucke
 
 ### D-037 API image bakes the ONNX models; memory measured on Linux
 The API image installs the `rag` group and downloads both models at build time, so a cold start never fetches ~100 MB on the first question. Measured in Docker (Linux) after document questions: **382 MiB** for the API container, under Render's 512 MB. This matches the macOS footprint benchmark (376 MB).
+
+## Weekly digest (v0.4.0)
+
+### D-038 Facts from SQL, narrative from Claude, gate in code
+`api/digest/facts.py` computes a point-in-time comparison of this week (as of D) with last week (D − 7): current-resident delinquency by bucket and property (dashboard definitions), leases whose last day falls in [D, D + 90], and work orders breaching SLA *at that date* (a ticket completed later still counts as open on the earlier date). Claude gets only the facts JSON (no tools, no database) and a versioned prompt (`prompts/digest/narrative_v1.md`) that forbids arithmetic: differences and percentages must be the ones in the facts. The code, not the model, decides what ships: every number in the narrative must match a fact, or the deterministic facts-only text is sent instead, flagged. A model or API failure takes the same fallback path, so the digest always goes out.
+
+### D-039 Typed percentage matching
+Building the tests surfaced a real hole in the shared number check: "down 18%" was accepted because an unrelated fact ("open 18 days") matched the bare number 18. `common/numbers.ungrounded` now takes optional `percent_sources`. In the digest, a "%" may only match `*_pct` facts. The agent eval keeps the loose default, because tool results don't label percentages. **Known limit:** money vs. count can still cross-match (for example "$18" vs. 18 days). A tighter check would need typed facts, which wasn't worth it for this appetite.
+
+### D-040 Rejected numbers never reach readers
+The fallback footer first named the rejected numbers ("used numbers not in the data ($9,999)"), which would have shown the wrong figure to the very people the check protects. Rejected numbers are now stored in `digest_runs.ungrounded` and shown only as an operator note on the preview page. The Slack text just says the summary was withheld.
+
+### D-041 Stored runs make "preview == sent" structural
+Every build is a row in `digest_runs` (facts, exact text, check result, cost, delivery status). **Send now** and the scheduled run deliver the stored `text` unchanged, and a test asserts the Slack payload equals the payload built from the previewed run. `make bench-digest` builds the narrative N times with trigger `bench`, which is never shown or sent. First run: **10/10** passed the number check, $0.207 in total.
+
+### D-042 Schedule via GitHub Actions; token-protected endpoint
+`.github/workflows/weekly-digest.yml` runs Mondays 13:00 UTC (and on demand). It calls `POST /digest/run` with a bearer token, compared in constant time. If the repo secrets aren't set (no deployed API yet), it skips with a notice instead of failing weekly. `DIGEST_SEND_ENABLED=false` turns the public demo into preview-only.
