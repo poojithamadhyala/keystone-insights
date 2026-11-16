@@ -2,7 +2,7 @@
 
 A property-management reporting platform with an AI agent that answers questions about portfolio data and documents. **All data is synthetic.** There are no real companies, people or properties.
 
-> Work in progress. Data, KPIs, dashboard, document search and the AI agent are done; the weekly digest is next. The architecture diagram, benchmark table and limitations are filled in as later milestones land.
+> Work in progress. Data, KPIs, dashboard, document search, the AI agent and the weekly digest are done; the public demo is next. The architecture diagram, benchmark table and limitations are filled in as later milestones land.
 
 ![Portfolio overview](docs/screenshots/overview.png)
 
@@ -54,5 +54,11 @@ Claude with three tools: `query_kpis` (read-only text-to-SQL behind four safety 
 | 10/10 | 5/5 | 5/5 | 3/3 | 18/18 | 18/18 |
 
 A small suite: no failures found at this size, not a zero failure rate. The agent needs `ANTHROPIC_API_KEY` in `.env`.
+
+### Weekly portfolio digest
+
+<img src="docs/screenshots/digest.png" alt="Weekly digest preview page" width="720">
+
+Every Monday: delinquency week over week, leases expiring in the next 90 days, and work orders breaching SLA. Every number comes from SQL. Claude writes only the summary, and **code checks every number in it against the facts**. If one doesn't match, the facts-only version is sent instead. The preview is the exact text Slack receives. In `make bench-digest`, 10/10 written summaries passed the number check ([BENCHMARKS.md](BENCHMARKS.md)). Delivery needs `SLACK_WEBHOOK_URL`; the schedule is a GitHub Action (`.github/workflows/weekly-digest.yml`).
 
 See [DECISIONS.md](DECISIONS.md) for design choices and [BENCHMARKS.md](BENCHMARKS.md) for measured results.

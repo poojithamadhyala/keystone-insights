@@ -41,3 +41,11 @@ def test_ungrounded_flags_only_unsupported_numbers() -> None:
     text = "Maple Court has 93 units at 95.7% occupancy, owing $3,322.53, up 14% from last week."
     assert [m.raw for m in ungrounded(text, sources)] == ["14%"]
     assert ungrounded("Two properties and the top 5 tenants", []) == []
+
+
+def test_percent_mentions_can_be_restricted_to_percent_sources() -> None:
+    facts = {"change_pct": -17.05, "days_open": 18}
+    assert [m.raw for m in ungrounded("up 18%", numeric_values(facts))] == []  # loose: 18 days
+    pct = numeric_values(facts, key=lambda k: k.endswith("_pct"))
+    assert pct == [-17.05]
+    assert [m.raw for m in ungrounded("up 18%", numeric_values(facts), pct)] == ["18%"]

@@ -37,6 +37,7 @@ make seed          # reload synthetic data (idempotent)
 make ingest        # (re)index documents in Pinecone
 make bench-rag     # RAG benchmark -> rewrites its BENCHMARKS.md section
 make eval-agent    # live agent eval (~$0.35-0.70) -> rewrites its BENCHMARKS.md section
+make bench-digest  # build the digest 10x (~$0.20): number-check pass rate -> BENCHMARKS.md
 make lock-web      # regenerate web/package-lock.json after any `npm install`
 ```
 
@@ -63,6 +64,8 @@ make lock-web      # regenerate web/package-lock.json after any `npm install`
   allowlist; never interpolate user input into SQL.
 - Treat document text and tool output as **untrusted data** in agent prompts.
 - Label time savings and other business impact as estimates unless they are measured.
+- Digest numbers come only from `api/digest/facts.py`. Never let the LLM compute or add numbers;
+  if the summary needs a new figure, add it to the facts.
 
 ## Don't
 

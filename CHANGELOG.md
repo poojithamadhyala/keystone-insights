@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+
+### Added
+- Weekly portfolio digest: SQL facts (delinquency week over week, leases expiring in 90 days,
+  work orders breaching SLA), Claude-written summary gated by a number check, facts-only
+  fallback, stored runs (`digest_runs`, migration 0003).
+- Digest page: preview of exactly what Slack receives, verified/fallback badge, Rebuild preview,
+  Send now, oldest SLA breaches, recent runs.
+- Slack delivery (Block Kit) and a weekly GitHub Actions schedule calling a token-protected
+  `POST /digest/run`.
+- `make bench-digest`: how often the written summary passes the number check (10/10).
+
+### Changed
+- `common/numbers`: percentages can be restricted to percentage facts; `numeric_values` can
+  filter by key.
+
 ## [0.3.0] - 2026-11-16
 
 ### Added
@@ -53,7 +69,8 @@ All notable changes to this project are documented here. The format follows
   `make bench-rag`.
 - Secret scan in `make check`, CI and a pre-commit hook.
 
-[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/poojithamadhyala/keystone-insights/releases/tag/v0.1.0

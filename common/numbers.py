@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
 SCALE = {"k": 1e3, "m": 1e6, "b": 1e9}
@@ -64,22 +64,27 @@ def extract(text: str) -> list[Mention]:
     return out
 
 
-def numeric_values(obj: object) -> list[float]:
-    """All numbers inside nested JSON-like data (and numbers written inside strings)."""
+def numeric_values(
+    obj: object, key: Callable[[str], bool] | None = None, _parent: str = ""
+) -> list[float]:
+    """All numbers inside nested JSON-like data (and numbers written inside strings).
+    With `key`, only values stored under dict keys for which key(name) is true."""
     vals: list[float] = []
+    take = key is None or key(_parent)
     if isinstance(obj, bool) or obj is None:
         return vals
     if isinstance(obj, int | float):
-        if math.isfinite(obj):
+        if take and math.isfinite(obj):
             vals.append(float(obj))
     elif isinstance(obj, str):
-        vals.extend(m.value for m in extract(obj))
+        if take:
+            vals.extend(m.value for m in extract(obj))
     elif isinstance(obj, dict):
-        for v in obj.values():
-            vals.extend(numeric_values(v))
+        for k, v in obj.items():
+            vals.extend(numeric_values(v, key, str(k)))
     elif isinstance(obj, Iterable):
         for v in obj:
-            vals.extend(numeric_values(v))
+            vals.extend(numeric_values(v, key, _parent))
     return vals
 
 
@@ -94,10 +99,18 @@ def matches(m: Mention, sources: Iterable[float]) -> bool:
     return False
 
 
-def ungrounded(text: str, sources: Iterable[float]) -> list[Mention]:
+def ungrounded(
+    text: str, sources: Iterable[float], percent_sources: Iterable[float] | None = None
+) -> list[Mention]:
     """Mentions in `text` that match no source value. Small integers (0-10) are allowed, since
-    they're usually counts in prose ("two properties", "top 5")."""
+    they're usually counts in prose ("two properties", "top 5").
+
+    If `percent_sources` is given, a "%" mention may only match those values. Otherwise "18%"
+    could be "grounded" by an unrelated fact such as "open 18 days"."""
     src = list(sources)
+    pct = list(percent_sources) if percent_sources is not None else src
     return [
-        m for m in extract(text) if not (m.value <= 10 and not m.percent) and not matches(m, src)
+        m
+        for m in extract(text)
+        if not (m.value <= 10 and not m.percent) and not matches(m, pct if m.percent else src)
     ]

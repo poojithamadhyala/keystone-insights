@@ -8,6 +8,7 @@ const shots = [
   { name: 'overview', path: '/' },
   { name: 'property', path: '/properties/1' },
   { name: 'overview-dark', path: '/', dark: true },
+  { name: 'digest', path: '/digest', wait: 'Preview (exactly what Slack receives)' },
   // Live agent call (costs a few cents): opens the panel and asks a suggested question.
   { name: 'agent-chart', path: '/', chat: 'Show occupancy by property as a bar chart.' },
   { name: 'agent-sql', path: '/', chat: 'Which properties have the most rent outstanding from current residents?', cite: 'S1' },
@@ -22,7 +23,8 @@ for (const s of shots) {
   })
   await page.goto(BASE + s.path)
   await page.waitForLoadState('networkidle')
-  await page.waitForSelector('.recharts-surface')
+  if (s.wait) await page.getByText(s.wait).waitFor()
+  else await page.waitForSelector('.recharts-surface')
   if (s.chat) {
     if (process.env.SKIP_AGENT) { await page.close(); continue }
     await page.getByRole('button', { name: 'Ask LeaseLens' }).click()
