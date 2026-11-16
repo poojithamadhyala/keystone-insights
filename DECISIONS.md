@@ -165,3 +165,19 @@ Every build is a row in `digest_runs` (facts, exact text, check result, cost, de
 
 ### D-042 Schedule via GitHub Actions; token-protected endpoint
 `.github/workflows/weekly-digest.yml` runs Mondays 13:00 UTC (and on demand). It calls `POST /digest/run` with a bearer token, compared in constant time. If the repo secrets aren't set (no deployed API yet), it skips with a notice instead of failing weekly. `DIGEST_SEND_ENABLED=false` turns the public demo into preview-only.
+
+## Public demo (v0.5.0)
+
+### D-043 Managed Postgres: the app user must be granted the read-only role
+On Neon the app's user isn't a superuser. Since Postgres 16, a non-superuser that creates a role gets ADMIN on it but not the right to `SET ROLE` to it, so every agent query would have failed in production with "permission denied to set role". This was **found before deploying** by reproducing Neon's setup locally (a `CREATEROLE`-only owner). Migration 0004 runs `GRANT leaselens_ro TO current_user`. The role's own privileges are unchanged: still `reporting` views only. `api/tests/test_managed_postgres.py` migrates and queries as a non-superuser. It fails without 0004 (verified) and passes with it, and it also proves the role stays view-only at the database level.
+
+### D-044 Demo safeguards live in the API, enabled by DEMO_MODE
+* **Per-IP rate limits** (10 agent questions, 3 digest builds per hour): an in-memory sliding window, so a restart resets it (acceptable). The client IP comes from `X-Forwarded-For` only when `TRUST_PROXY` is set; otherwise anyone could choose their own bucket.
+* **Daily spend cap** ($2): Claude cost per UTC day in Postgres (`llm_spend`), so it survives the free host's restarts. Check-then-record can overshoot by the cost of requests already in flight (about $0.05 each), which is acceptable for a demo.
+* **Over budget or no key:** real answers to the five suggested questions, recorded once (`api/record_samples.py`, $0.199) and labeled "Recorded answer", so the demo never shows a dead chat. Free-form questions get a polite pause message. The digest falls back to its facts-only text without calling the model.
+* **Send now** is off on the demo (`DIGEST_SEND_ENABLED=false`); the token-protected weekly schedule still sends.
+* In demo mode, errors shown to visitors are generic (details go to the server log).
+All of it was exercised against the real Docker image in demo mode at $0 (spend cap 0): recorded answer, pause message, 429 with `Retry-After`, Send now refused, facts-only digest, CORS limited to the configured origin.
+
+### D-045 Hosting shape
+Vercel serves the static build (`web/vercel.json`, SPA rewrites); `VITE_API_URL` is the only value the browser gets. Render runs the existing API image from `render.yaml`; secrets are `sync: false`, so they're entered in Render's dashboard. The container runs Alembic on boot (idempotent) and binds `$PORT`. Neon holds the seeded data (23 MB of the 0.5 GB free tier), seeded from a laptop with `make seed-remote` over a direct (non-pooled) connection. Render's free plan sleeps when idle, so the web app gates on `/health` and shows a "Waking up the demo API" screen with elapsed seconds instead of errors. CI now builds the web app and scans the bundle for key-like strings and server-side variable names; a planted fake key was caught.
