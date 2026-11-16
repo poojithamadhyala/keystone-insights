@@ -128,7 +128,10 @@ def test_ungrounded_narrative_falls_back_to_facts(test_engine: Engine) -> None:
 
 def test_model_failure_still_produces_a_digest(test_engine: Engine) -> None:
     run = service.build_digest(test_engine, FakeDigestClient(None), AS_OF, "preview")
-    assert not run["narrative_ok"] and "narrative unavailable: RuntimeError" in run["text"]
+    assert not run["narrative_ok"]
+    assert "the written summary was unavailable (RuntimeError) and was withheld" in run["text"]
+    skipped = service.build_digest(test_engine, None, AS_OF, "preview")  # budget spent / no key
+    assert "the written summary was skipped (AI budget or key unavailable)" in skipped["text"]
 
 
 def test_slack_payload_carries_the_stored_text_unchanged() -> None:

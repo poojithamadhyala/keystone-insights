@@ -8,23 +8,26 @@ demo; a restart starts a new chat (see README limitations).
 from __future__ import annotations
 
 import json
+import logging
 import time
 from collections import OrderedDict
 from collections.abc import AsyncIterator
 from functools import lru_cache
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import Engine
 from sse_starlette.sse import EventSourceResponse
 
+from api import safeguards
 from api.agent.loop import Conversation, run_turn
 from api.agent.tools import ToolContext
 from api.db import get_engine
 from common.settings import get_settings
 
 router = APIRouter(prefix="/agent", tags=["agent"])
+log = logging.getLogger(__name__)
 
 SUGGESTIONS = [
     "Which properties have the most rent outstanding from current residents?",
@@ -66,12 +69,11 @@ STORE = _Store()
 
 @lru_cache
 def get_client() -> Any:
+    """AsyncAnthropic client, or None when no key is configured (then cached answers are used)."""
     import anthropic
 
     key = get_settings().anthropic_api_key
-    if not key:
-        raise HTTPException(503, "ANTHROPIC_API_KEY is not configured on the server")
-    return anthropic.AsyncAnthropic(api_key=key, max_retries=2)
+    return anthropic.AsyncAnthropic(api_key=key, max_retries=2) if key else None
 
 
 def get_search() -> Any:
@@ -96,19 +98,46 @@ def suggestions() -> list[str]:
 @router.post("/chat")
 async def chat(
     body: ChatIn,
+    request: Request,
     engine: Annotated[Engine, Depends(get_engine)],
     client: Annotated[Any, Depends(get_client)],
     search: Annotated[Any, Depends(get_search)],
 ) -> EventSourceResponse:
+    settings = get_settings()
+    safeguards.enforce_rate_limit(request, "agent", settings.agent_questions_per_hour)
+    live = client is not None and safeguards.budget_available(engine)
     conv = STORE.get(body.conversation_id) or Conversation(ToolContext(engine, search))
     STORE.put(conv)
 
-    async def events() -> AsyncIterator[dict[str, str]]:
+    async def live_events() -> AsyncIterator[dict[str, str]]:
         yield {"event": "conversation", "data": json.dumps({"id": conv.id})}
         try:
             async for ev in run_turn(client, conv, body.message):
+                if ev["type"] == "done":
+                    safeguards.record_spend(engine, ev["cost_usd"])
                 yield {"event": ev["type"], "data": json.dumps(ev, default=str)}
-        except Exception as e:  # surface API/DB failures to the UI instead of a dead stream
-            yield {"event": "error", "data": json.dumps({"type": "error", "message": str(e)})}
+        except Exception as e:  # surface failures to the UI instead of a dead stream
+            log.exception("agent turn failed")
+            msg = "Something went wrong answering this question." if settings.demo_mode else str(e)
+            yield {"event": "error", "data": json.dumps({"type": "error", "message": msg})}
 
-    return EventSourceResponse(events())
+    async def cached_events() -> AsyncIterator[dict[str, str]]:
+        yield {"event": "conversation", "data": json.dumps({"id": conv.id})}
+        reason = ("the live demo's daily AI budget is used up" if client is not None
+                  else "no AI key is configured on this server")  # fmt: skip
+        sample = safeguards.load_samples().get(body.message.strip())
+        if sample is None:
+            msg = (f"Live answers are paused ({reason}). Pick one of the suggested questions to "
+                   "see a recorded answer, or come back tomorrow.")  # fmt: skip
+            yield {"event": "error", "data": json.dumps({"type": "error", "message": msg})}
+            yield {"event": "done", "data": json.dumps({"type": "done", "cost_usd": 0,
+                                                         "cached": True})}  # fmt: skip
+            return
+        notice = {"type": "notice", "message": f"Recorded answer: {reason}."}
+        yield {"event": "notice", "data": json.dumps(notice)}
+        for ev in sample:
+            if ev["type"] == "done":  # a recorded answer costs nothing now
+                ev = {**ev, "cost_usd": 0, "cached": True}
+            yield {"event": ev["type"], "data": json.dumps(ev)}
+
+    return EventSourceResponse(live_events() if live else cached_events())
