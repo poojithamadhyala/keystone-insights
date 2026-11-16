@@ -29,13 +29,7 @@ def hardware() -> str:
             chip = f"{chip}, {mem} GB RAM"
         except (OSError, ValueError):
             pass
-    try:
-        from common.device import best_device
-
-        device = best_device()
-    except ImportError:
-        device = "cpu"
-    return f"{chip}, {platform.system()} {platform.release()}, torch device: {device}"
+    return f"{chip}, {platform.system()} {platform.release()}"
 
 
 def update_benchmarks(key: str, body: str) -> None:

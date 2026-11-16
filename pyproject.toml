@@ -26,9 +26,8 @@ dev = [
 ]
 rag = [
     "anthropic>=2.9.0",
+    "fastembed>=0.9.1",
     "pinecone>=10.3.0",
-    "sentence-transformers>=3",
-    "torch>=2.15.0",
 ]
 
 [tool.uv]
