@@ -19,6 +19,7 @@ jobs:
           --health-cmd "pg_isready -U leaselens" --health-interval 3s --health-retries 20
     steps:
       - uses: actions/checkout@v4
+      - run: infra/check_secrets.sh
       - uses: astral-sh/setup-uv@v6
       - run: uv sync
       - run: uv run ruff check .

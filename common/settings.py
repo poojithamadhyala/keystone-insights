@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     postgres_ro_password: str = "leaselens_ro"
 
     redis_url: str = "redis://localhost:6379/0"
+    pinecone_api_key: str = ""
+    pinecone_index: str = "leaselens-docs"
+    anthropic_api_key: str = ""
+    leaselens_model: str = "claude-opus-5-5"
     seed: int = 42
 
     @property

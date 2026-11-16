@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: help install env up up-all down logs seed demo test lint typecheck check lock-web
+.PHONY: help install env up up-all down logs seed demo test lint typecheck check lock-web secrets hooks docs ingest rag-questions rag-review bench-rag
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -43,7 +43,31 @@ typecheck:  ## mypy + tsc
 	uv run mypy .
 	cd web && npm run typecheck
 
-check: lint typecheck test  ## Everything CI runs
+check: secrets lint typecheck test  ## Everything CI runs
+
+secrets:  ## Fail if an API key appears in a tracked/staged file
+	infra/check_secrets.sh
+
+hooks:  ## Install a git pre-commit hook that runs the secret scan
+	printf '#!/bin/sh\nexec infra/check_secrets.sh\n' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
 lock-web:  ## Regenerate web/package-lock.json with the same npm as CI/Docker (D-009)
 	docker run --rm -v "$$PWD/web:/app" -w /app node:24-alpine npm install --package-lock-only
+
+# ---------------------------------------------------------------- RAG (milestone 2)
+RAG := uv run --group rag
+
+docs:  ## Regenerate the synthetic documents into data/out/docs
+	$(RAG) python -m rag.documents
+
+ingest:  ## Parse, chunk, embed and upsert documents into Pinecone (needs PINECONE_API_KEY)
+	$(RAG) python -m rag.ingest --regenerate
+
+rag-questions:  ## Re-generate eval candidates with Claude (costs about $1, see BENCHMARKS.md)
+	$(RAG) python -m evals.rag.generate_questions
+
+rag-review:  ## Apply verdicts from evals/rag/REVIEW.md to questions.jsonl
+	$(RAG) python -m evals.rag.apply_review
+
+bench-rag:  ## RAG ablation ladder: Recall@5 / MRR / nDCG@10 -> BENCHMARKS.md
+	$(RAG) python -m evals.rag.bench

@@ -67,3 +67,32 @@ When a tenant catches up on a partial payment, the generator overwrites `amount_
 
 ### Gotcha
 After any local `npm install`, run `make lock-web` (D-009). Otherwise the Docker and CI `npm ci` will reject the lockfile.
+
+## Milestone 2: RAG over property documents
+
+### D-018 Documents generated from the same dataset as the database
+150 Markdown documents (house rules, leases, SOPs, vendor contracts, inspection reports) are rendered from the seeded `Dataset`, so every rent, vendor rate and unit number agrees with SQL. That matters for graph RAG and agent evals later. Three documents carry planted prompt-injection text. The flag lives only in the manifest, never in indexed metadata, so milestone 3 can test the agent's defenses. **Limitation:** templated documents share layout and wording, so they are easier to retrieve from than real ones, and absolute scores are optimistic. Comparisons between variants are still meaningful.
+
+### D-019 Eval labels are verbatim evidence spans, not chunk ids
+Each question stores `(doc_id, span_start, span_end)` for its evidence. A retrieved chunk is relevant if it covers at least 50% of the span. **Why:** chunk ids change with the chunking strategy, so chunk-id labels would bake one chunker into the ground truth and make the baseline vs. structured comparison unfair. Ranking metrics count only the first relevant hit, so overlapping fixed chunks covering the same span aren't double-counted. A test fails if the document generator ever shifts a labeled span.
+
+### D-020 Hybrid search: own BM25, L2-normalised, one dotproduct index
+BM25 is about 40 lines (`rag/sparse.py`) rather than a library, so every weight can be explained. Dense and sparse vectors are both unit-normalised and mixed as `alpha·dense + (1−alpha)·sparse`. Without normalisation, raw BM25 scores (about 5–30) would swamp cosine similarity ([−1, 1]) and alpha would mean nothing. One serverless index (dotproduct, 384-d) holds both variants in separate namespaces (`fixed`, `structured`), so everything except the chunking is held constant.
+
+### D-021 Doc-type filter removed after dev-split error analysis; property filter kept
+The first benchmark run showed "+filters" slightly below "+hybrid". Diagnosed **on the dev split only**: keyword rules misfired ("put on the *lease*" inside a house-rules question, "*smok*e alarm" matching the smoking rule). A wrong hard filter makes the answer unretrievable, and a right one added little because the section headers already disambiguate. The exact-name property filter stays; doc-type filtering is off by default (`parse_filters(doc_types=True)` re-enables it). **Transparency:** the test split was scored once before this change and once after. The change was chosen from dev evidence, not from test numbers.
+
+### D-022 Dev/test split, alpha tuned on dev, bootstrap CIs
+There is a stable hash-based 30/70 split (41 dev / 89 test). Alpha is grid-searched on dev nDCG@10 over {0.3, 0.5, 0.7, 0.85, 1.0}. The first grid stopped at 0.85, its edge, so 1.0 (dense only) was added. Dev picked 1.0: **BM25 did not help on this corpus.** Twenty near-identical house-rules documents share vocabulary, so keyword overlap points at the wrong property. With 89 test questions, every metric carries a bootstrap 95% CI, and differences with overlapping CIs aren't claimed as wins.
+
+### D-023 Local models on MPS
+Embeddings use `BAAI/bge-small-en-v1.5` (384-d, with an instruction prefix on queries only). Reranking uses `cross-encoder/ms-marco-MiniLM-L-6-v2` over the top 30 candidates. Both run on CUDA, MPS or CPU via `common/device.py`. Reranking costs about 60 ms p50 and gave the largest MRR gain.
+
+### D-024 Eval questions drafted by Claude, checked mechanically and by a human
+Claude Opus 5.5 is called through `client.beta.messages.parse` with a Pydantic schema, effort `low` (a simple, well-specified task), and server-side refusal fallbacks (`fallbacks="default"`). For each sampled section it writes a question (half paraphrase, half keyword style) plus a verbatim evidence quote. A candidate is kept only if the quote is found in the document. The run kept 130/130 and cost **$1.03** (193k input / 13k output tokens). A 25-item human spot-check (`evals/rag/REVIEW.md` → `make rag-review`) records label precision in BENCHMARKS.md and excludes rejected items.
+
+### D-025 `anthropic` is a core dependency
+The agent (milestone 3) runs inside the API, and CI imports the eval code. Torch and Pinecone stay in the `rag` group, and a fresh no-torch environment passes the full test suite.
+
+### D-026 Secret scan in CI and as a pre-commit hook
+API keys were once pasted into `.env.example`, a tracked file. They were caught before any commit. `infra/check_secrets.sh` now fails `make check`, CI and `git commit` if a key-like string (Anthropic, Pinecone, Slack webhook, AWS) appears in a tracked or staged file.

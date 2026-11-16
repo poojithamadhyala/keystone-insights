@@ -2,7 +2,7 @@
 
 A property-management reporting platform with an AI agent that answers questions about portfolio data and documents. **All data is synthetic.** There are no real companies, people or properties.
 
-> Work in progress. Milestone 1 (data, KPIs, dashboard) is done. The architecture diagram, benchmark table and limitations are filled in as later milestones land.
+> Work in progress. Milestones 1 (data, KPIs, dashboard) and 2 (RAG) are done. The architecture diagram, benchmark table and limitations are filled in as later milestones land.
 
 ![Portfolio overview](docs/screenshots/overview.png)
 
@@ -32,5 +32,16 @@ make check         # ruff, mypy, eslint, tsc, pytest, vitest
 | Schema | PostgreSQL with Alembic. A PII-free `reporting` schema is the only thing the read-only agent role can see. |
 | KPI API | FastAPI endpoints for occupancy, rent roll, delinquency aging, lease expirations, NOI and work-order SLA, all with property, date and as-of filters |
 | Dashboard | React, TypeScript, Vite, Tailwind and Recharts. Portfolio overview, property drill-down, URL-based filters, table view for every chart, dark mode. |
+
+| RAG | 150 synthetic property documents in Pinecone. Baseline: fixed 1,000-character chunks with dense search. Improved: section chunks with title headers, a property filter and cross-encoder reranking. Hybrid BM25 is built and switchable, but it was measured to not help on this corpus. Labels are verbatim evidence spans. `make bench-rag` runs the ablation with bootstrap CIs. |
+
+### RAG benchmark (from [BENCHMARKS.md](BENCHMARKS.md), 89 test questions)
+
+| Variant | Recall@5 | MRR@10 | nDCG@10 |
+|---|---|---|---|
+| Baseline (fixed chunks, dense) | 0.629 | 0.555 | 0.594 |
+| Improved (section chunks + rerank) | 0.989 | 0.946 | 0.957 |
+
+RAG needs `PINECONE_API_KEY` in `.env`; run `make ingest` then `make bench-rag`.
 
 See [DECISIONS.md](DECISIONS.md) for design choices and [BENCHMARKS.md](BENCHMARKS.md) for measured results.

@@ -12,6 +12,7 @@ dependencies = [
   "alembic>=1.13",
   "faker>=30",
   "numpy>=1.26",
+  "anthropic>=2.9",
 ]
 
 # Heavy deps live in groups so the API image stays small (see DECISIONS.md D-002).
@@ -22,6 +23,12 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.11",
     "httpx2>=2.16.2",
+]
+rag = [
+    "anthropic>=2.9.0",
+    "pinecone>=10.3.0",
+    "sentence-transformers>=3",
+    "torch>=2.15.0",
 ]
 
 [tool.uv]
