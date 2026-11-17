@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: help install env up up-all down logs seed demo test lint typecheck check lock-web secrets hooks docs ingest rag-questions rag-review bench-rag eval-agent bench-digest seed-remote
+.PHONY: help install env up up-all down logs seed demo test lint typecheck check lock-web secrets hooks docs ingest rag-questions rag-review bench-rag eval-agent bench-digest seed-remote bench-a11y
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -84,3 +84,6 @@ bench-digest:  ## Build the digest 10x and report how often the narrative passes
 seed-remote:  ## Migrate + seed a hosted DB: DATABASE_URL='postgresql://...' make seed-remote
 	@test -n "$$DATABASE_URL" || (echo "Set DATABASE_URL to the Neon connection string"; exit 1)
 	uv run python -m data.seed
+
+bench-a11y:  ## Lighthouse accessibility for the main pages (app must be running; WEB_URL to target)
+	uv run python -m evals.a11y_bench
