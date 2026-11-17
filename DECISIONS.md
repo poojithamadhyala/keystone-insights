@@ -192,3 +192,17 @@ Four problems came up while deploying to Vercel, Render and Neon. Each is now fi
 **Also found:** the "Facts-only fallback" preview reported after deploy came from the *local* app. My demo-mode simulation (D-044, run with the spend cap at $0) had written a facts-only digest into the local database. The live database had never stored a fallback, and its first real build verified (all numbers matched, $0.02). Lesson: run simulations against a throwaway database. The local preview was rebuilt.
 
 **Not yet measured:** Render memory after a document question, and cold-start time. 382 MiB was measured locally in Docker, not on Render. The steps are in `docs/deploy.md` §5; the numbers will be recorded here once measured.
+
+## Polish (v1.0.0)
+
+### D-047 Phone width: grid items need `min-w-0`
+`npm run check-mobile` (375 px) failed on every page at first. The header button wrapped and overflowed by 5 px, and on the property page the rent-roll table pushed the page 75 px wide. CSS grid items default to `min-width: auto`, so a wide table stretched its grid cell instead of scrolling inside its card. Fix: `min-w-0` on cards and grid items, and a compact header on small screens ("Ask", "Digest"). All three pages now fit (scrollWidth = 375).
+
+### D-048 Every chart card has explicit states, a summary and a "why this chart"
+`ChartCard` handles: first load (a fixed-height placeholder, so nothing jumps), refetch (dimmed previous data), error (message + **Retry**, via `useApi().reload`), and empty (a sentence instead of blank axes). Each chart also gets a one-sentence screen-reader summary computed from the data (`role="img"` + `aria-label`) and an ⓘ note on why it's that chart type. The notes live in one file (`web/src/chartNotes.ts`), mirrored in the operator brief.
+
+### D-049 Muted text darkened to pass WCAG AA (#898781 → #65635d)
+Lighthouse scored 95–96. The only failing audit was contrast: the reference palette's muted grey (#898781) is specified for axis and gridline *graphics* (3:1) but had also been used for small *text*, where it measured 3.4–3.5:1 against the 4.5:1 requirement. The replacement keeps the same warm hue, darkened to the lightest value that clears 4.5:1 on every light background it sits on (5.85 / 5.70 / 4.54 on the grey chip background). It was computed, not eyeballed. Dark mode already passed (4.85 / 5.41). Result: **100 / 100 / 100**, reproducible with `make bench-a11y`. Automated checks only; no manual screen-reader pass yet.
+
+### D-050 README is the 60-second pitch
+Live link and GIF first, then what it does, a walkthrough script, architecture (Mermaid), a five-command quickstart, results copied from BENCHMARKS.md, how it was built with Claude Code (including the problems verification caught), limitations and future work. The GIF is scripted (`npm run record-gif`: Playwright video → two-pass ffmpeg palette, 10 fps, 900 px, 3.6 MB), so it can be re-recorded after UI changes. `/health` now reports the deployed commit (`RENDER_GIT_COMMIT`), to confirm what's live.

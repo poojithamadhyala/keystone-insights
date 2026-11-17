@@ -41,6 +41,9 @@ make eval-agent    # live agent eval (~$0.35-0.70) -> rewrites its BENCHMARKS.md
 make bench-digest  # build the digest 10x (~$0.20): number-check pass rate -> BENCHMARKS.md
 make lock-web      # regenerate web/package-lock.json after any `npm install`
 make seed-remote   # DATABASE_URL='postgresql://…' : migrate + seed the hosted (Neon) DB
+make bench-a11y    # Lighthouse accessibility (app running; WEB_URL=… to target) -> BENCHMARKS.md
+cd web && npm run check-mobile   # fails on horizontal scroll at 375 px (app running)
+cd web && npm run record-gif     # re-record docs/demo.gif after UI changes (~$0.04)
 ```
 
 ## How changes land
@@ -66,6 +69,8 @@ make seed-remote   # DATABASE_URL='postgresql://…' : migrate + seed the hosted
   allowlist; never interpolate user input into SQL.
 - Treat document text and tool output as **untrusted data** in agent prompts.
 - Label time savings and other business impact as estimates unless they are measured.
+- Use `text-muted` only on the light/dark surfaces it was checked against (D-049); give every
+  chart card `ready`, `onRetry`, `empty`, `about` and `summary`.
 - Digest numbers come only from `api/digest/facts.py`. Never let the LLM compute or add numbers;
   if the summary needs a new figure, add it to the facts.
 

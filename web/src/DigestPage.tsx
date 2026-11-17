@@ -149,7 +149,7 @@ export function DigestPage() {
                 {run.delivery_status && ` · ${run.delivery_status}`}
               </p>
             </section>
-            <div className="lg:col-span-2">
+            <div className="min-w-0 lg:col-span-2">
               <ChartCard title="Oldest open SLA breaches" subtitle="Open past target as of the data date" chart={
                 f.sla.oldest.length === 0 ? <p className="text-sm text-muted">No open breaches.</p> : (
                   <DataTable<Breach> rows={f.sla.oldest} rowKey={(b) => b.work_order_id} columns={[

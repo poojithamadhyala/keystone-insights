@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 from fastapi import FastAPI
@@ -24,4 +25,7 @@ app.include_router(digest_router)
 @app.get("/health")
 def health() -> dict[str, Any]:
     s = get_settings()
-    return {"status": "ok", "demo_mode": s.demo_mode, "send_enabled": s.digest_send_enabled}
+    # Render sets RENDER_GIT_COMMIT, so you can see which commit is live.
+    version = os.environ.get("RENDER_GIT_COMMIT", "local")[:7]
+    return {"status": "ok", "demo_mode": s.demo_mode, "send_enabled": s.digest_send_enabled,
+            "version": version}  # fmt: skip

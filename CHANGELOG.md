@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-16
+
+### Added
+- Loading, empty and error (with Retry) states on every chart card; screen-reader summaries;
+  "why this chart type" notes (ⓘ), mirrored in the operator brief.
+- `npm run check-mobile` (no horizontal scroll at 375 px), `make bench-a11y` (Lighthouse),
+  `npm run record-gif` (README walkthrough GIF).
+- `/health` reports the deployed commit.
+- README rewrite: live demo, GIF, 60-second walkthrough, architecture, results, how it was built
+  with Claude Code, limitations, future work. `docs/domo.md` (how it would ship as a Domo app).
+
+### Fixed
+- Phone layout: header overflow and the rent-roll table widening the page (grid `min-w-0`).
+- Muted text contrast below WCAG AA (#898781 → #65635d); Lighthouse accessibility 100 on all
+  three pages (was 95–96).
+
 ## [0.5.0] - 2026-11-16
 
 Public demo: https://keystone-insights-nu.vercel.app
@@ -89,7 +105,8 @@ Public demo: https://keystone-insights-nu.vercel.app
   `make bench-rag`.
 - Secret scan in `make check`, CI and a pre-commit hook.
 
-[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.2.0...v0.3.0

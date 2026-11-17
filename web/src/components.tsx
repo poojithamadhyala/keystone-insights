@@ -49,38 +49,71 @@ export function DataTable<T>({ rows, columns, rowKey }: {
 }
 
 /** Card with title, optional legend, and a chart <-> table toggle (accessibility: every value
- *  is reachable without hovering). Holds the previous render at reduced opacity while loading. */
-export function ChartCard({ title, subtitle, legend, chart, table, loading, error }: {
+ *  is reachable without hovering). States:
+ *  - first load: a fixed-height placeholder (no layout jump)
+ *  - refetch: holds the previous render at reduced opacity
+ *  - error: message + Retry
+ *  - empty: the `empty` message instead of blank axes
+ *  `about` explains why this chart type was chosen (ⓘ); `summary` is the screen-reader
+ *  description of what the chart shows. */
+export function ChartCard({
+  title, subtitle, legend, chart, table, loading, ready, error, onRetry, empty, about, summary,
+}: {
   title: string; subtitle?: string; legend?: ReactNode; chart: ReactNode; table?: ReactNode
-  loading?: boolean; error?: string
+  loading?: boolean; ready?: boolean; error?: string; onRetry?: () => void
+  empty?: string | false; about?: string; summary?: string
 }) {
   const [showTable, setShowTable] = useState(false)
+  const [showAbout, setShowAbout] = useState(false)
+  const firstLoad = ready === false && !error // no data has arrived yet
+  let body: ReactNode
+  if (error) {
+    body = (
+      <div role="alert" className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-critical">Couldn't load this: {error}</span>
+        {onRetry && (
+          <button type="button" onClick={onRetry}
+                  className="rounded border border-border px-2 py-0.5 text-xs hover:bg-grid">Retry</button>
+        )}
+      </div>
+    )
+  } else if (firstLoad) {
+    body = <div className="flex h-40 items-center justify-center text-sm text-muted">Loading…</div>
+  } else if (empty) {
+    body = <p className="py-6 text-center text-sm text-muted">{empty}</p>
+  } else {
+    body = (
+      <div className={`transition-opacity ${loading ? 'opacity-50' : ''}`} aria-busy={loading}>
+        {showTable ? table : (
+          <div role="img" aria-label={summary ? `${title}: ${summary}` : title}>{chart}</div>
+        )}
+      </div>
+    )
+  }
   return (
-    <section className="rounded-lg border border-border bg-surface p-4">
+    <section className="min-w-0 rounded-lg border border-border bg-surface p-4" aria-label={title}>
       <header className="mb-3 flex items-start justify-between gap-2">
-        <div>
+        <div className="min-w-0">
           <h2 className="font-medium text-ink">{title}</h2>
           {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
         </div>
-        {table && (
-          <button
-            type="button"
-            onClick={() => setShowTable((v) => !v)}
-            className="rounded border border-border px-2 py-0.5 text-xs text-ink-2 hover:bg-grid"
-            aria-pressed={showTable}
-          >
-            {showTable ? 'Chart' : 'Table'}
-          </button>
-        )}
-      </header>
-      {legend && !showTable && <div className="mb-2">{legend}</div>}
-      {error ? (
-        <p className="text-sm text-critical">Failed to load: {error}</p>
-      ) : (
-        <div className={`transition-opacity ${loading ? 'opacity-50' : ''}`}>
-          {showTable ? table : chart}
+        <div className="flex shrink-0 gap-1">
+          {about && (
+            <button type="button" onClick={() => setShowAbout((v) => !v)} aria-expanded={showAbout}
+                    aria-label={`Why this chart type: ${title}`}
+                    className="rounded border border-border px-1.5 py-0.5 text-xs text-ink-2 hover:bg-grid">ⓘ</button>
+          )}
+          {table && !error && !empty && (
+            <button type="button" onClick={() => setShowTable((v) => !v)} aria-pressed={showTable}
+                    className="rounded border border-border px-2 py-0.5 text-xs text-ink-2 hover:bg-grid">
+              {showTable ? 'Chart' : 'Table'}
+            </button>
+          )}
         </div>
-      )}
+      </header>
+      {showAbout && about && <p className="mb-2 rounded bg-grid px-2 py-1 text-xs text-ink-2">{about}</p>}
+      {legend && !showTable && !error && !empty && <div className="mb-2">{legend}</div>}
+      {body}
     </section>
   )
 }

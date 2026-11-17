@@ -7,7 +7,7 @@
   --color-surface: #fcfcfb;
   --color-ink: #0b0b0b;
   --color-ink-2: #52514e;
-  --color-muted: #898781;
+  --color-muted: #65635d; /* 5.7:1 on the page; the palette grey #898781 (3.4:1) failed WCAG AA for small text */
   --color-grid: #e1e0d9;
   --color-axis: #c3c2b7;
   --color-border: rgba(11, 11, 11, 0.1);

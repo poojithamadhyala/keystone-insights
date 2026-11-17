@@ -12,6 +12,23 @@ must be true before an operator signs off on it. All data is synthetic. The as-o
 | **Property manager** | Their property's day-to-day: vacancies, who is behind on rent, renewals coming up, open maintenance | Daily / weekly |
 | **Accounting** | Receivables and cash: aging, collections, write-off candidates, NOI that reconciles | Weekly / month-end |
 
+## Why each chart type
+
+Form follows the data's job (the same notes are behind each chart's ⓘ button, `web/src/chartNotes.ts`):
+
+| View | Form | Why |
+|---|---|---|
+| Occupancy | Line | One measure changing month to month; the y-axis is zoomed so a one-point move is visible, and the table view gives exact values. |
+| Net operating income | Lines on one $ axis | Collected rent, expenses and NOI move together, so a gap opening between lines shows whether revenue or costs drove the change. |
+| Delinquency aging | Stacked bars | Each bucket is a total split into current vs. former residents (two audiences: collection calls vs. collections/write-off); buckets keep their natural order. |
+| Lease expirations | Bars | A count per month, where spotting heavy months matters more than the trend between them. |
+| NOI by property | Horizontal bars, sorted | Long property names stay readable and rank is obvious; click to drill down. |
+| Work-order SLA | Table | Four priorities with exact on-time rates and medians; the precise numbers matter more than shape. |
+
+Every chart also has a table view, a screen-reader summary, and a palette validated for
+color-vision deficiency. Text meets WCAG AA contrast (Lighthouse accessibility 100 on all three
+pages; see BENCHMARKS.md).
+
 ## Dashboard views
 
 ### Portfolio overview: KPI tiles

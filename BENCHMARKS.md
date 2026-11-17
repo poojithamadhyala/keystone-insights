@@ -61,3 +61,20 @@ Cost: **$0.35** total, $0.015 per question on average. Median latency 5.5 s per 
 
 Every number in the written summary must match a SQL fact (rounding or truncation to the written precision allowed; percentages only match percentage facts). A failed check doesn't stop the digest: it goes out as the facts-only version, flagged. The pass rate is how often readers get the written summary.
 <!-- bench:digest:end -->
+
+<!-- bench:a11y:start -->
+## Accessibility (Lighthouse)
+
+- **Command:** `make bench-a11y`
+- **Date:** 2026-11-16
+- **Tool:** lighthouse@12.2.1, headless Chrome, light mode, desktop viewport
+- **Target:** `http://localhost:5174`
+
+| Page | Score | Failing audits |
+|---|---|---|
+| Portfolio overview | 100 | none |
+| Property drill-down | 100 | none |
+| Weekly digest | 100 | none |
+
+Automated checks catch only part of accessibility (contrast, labels, roles, names). Manual keyboard and screen-reader testing hasn't been done.
+<!-- bench:a11y:end -->
