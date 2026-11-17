@@ -11,7 +11,8 @@ from common.settings import get_settings
 app = FastAPI(title="LeaseLens API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_settings().cors_origin_list,  # the Vercel URL on the public demo
+    allow_origins=get_settings().cors_origin_list,  # the Vercel production URL
+    allow_origin_regex=get_settings().cors_origin_regex or None,  # Vercel preview deployments
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
