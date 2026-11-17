@@ -206,3 +206,14 @@ Lighthouse scored 95–96. The only failing audit was contrast: the reference pa
 
 ### D-050 README is the 60-second pitch
 Live link and GIF first, then what it does, a walkthrough script, architecture (Mermaid), a five-command quickstart, results copied from BENCHMARKS.md, how it was built with Claude Code (including the problems verification caught), limitations and future work. The GIF is scripted (`npm run record-gif`: Playwright video → two-pass ffmpeg palette, 10 fps, 900 px, 3.6 MB), so it can be re-recorded after UI changes. `/health` now reports the deployed commit (`RENDER_GIT_COMMIT`), to confirm what's live.
+
+## Welcome page and plain English (v1.1.0)
+
+### D-052 A welcome page that a non-expert understands in 10 seconds
+Shaped in `docs/shaping/welcome-redesign.md`; the direction was chosen from three mock-ups (welcome page + plain English, story-first dashboard, bold marketing page). We picked the one that still looks like a tool a company would use internally.
+* **`/` is the welcome page; the dashboard moved to `/dashboard`.** `/properties/:id` is unchanged. The scripts (screenshots, mobile check, accessibility, GIF) were updated.
+* **Plain English everywhere, industry term kept in parentheses** ("Unpaid rent (Delinquency)"), so experts still recognise the terms. The labels and explanations live in one file (`web/src/health.ts`) shared by the welcome page, the dashboard and the weekly summary.
+* **Verdicts only where a fair rule exists:** occupancy (95% / 90%) and repairs on time (90% / 80%). They're shown on the page and in the operator brief, and labeled as judgment calls. Unpaid rent and leases ending get size and trend instead, because a threshold would need the size of the rent roll, which no endpoint provides. That's better left unsaid than invented.
+* **Same numbers as the dashboard:** the welcome cards call the same endpoints with the same 12-month window, and the hero's live trend card uses the same occupancy series.
+* **Color tokens were computed, not eyeballed:** brand #1c5cab (6.0–6.5:1 as text), and status text on its own tinted background, checked in both themes. Dark-mode muted grey fails on the status backgrounds (4.29–4.42:1), so status chips never use it. Lighthouse accessibility stays **100 on all four pages**, and there's no horizontal scroll at 375 px.
+* The dev server's proxy now sets `changeOrigin` so local development can point at the hosted API (`API_URL=https://…`), which routes by Host header. It was used while Docker was paused.

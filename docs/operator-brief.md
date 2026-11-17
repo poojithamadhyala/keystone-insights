@@ -12,6 +12,26 @@ must be true before an operator signs off on it. All data is synthetic. The as-o
 | **Property manager** | Their property's day-to-day: vacancies, who is behind on rent, renewals coming up, open maintenance | Daily / weekly |
 | **Accounting** | Receivables and cash: aging, collections, write-off candidates, NOI that reconciles | Weekly / month-end |
 
+## Welcome page (`/`)
+
+| | |
+|---|---|
+| **Questions** | What is this app? Is the portfolio healthy right now? Where do I go next? |
+| **Personas** | Anyone new: a reviewer, a new property manager, an executive glancing in |
+| **Decision** | Which part of the app to open (dashboard, ask a question, weekly summary) |
+| **Sign-off** | The four health cards use the same endpoints and 12-month window as the dashboard, so the numbers match the dashboard tiles exactly. Verdicts follow the rules of thumb below and always show a word and an icon, never color alone. *Verified by `web/src/Home.test.tsx` and `web/src/health.test.ts`.* |
+
+**Rules of thumb for "healthy"** (`web/src/health.ts`; shown on the page under "How we judge healthy"):
+
+| Measure | Healthy | Keep an eye on | Needs attention |
+|---|---|---|---|
+| Apartments rented (occupancy) | ≥ 95% | 90–95% | < 90% |
+| Repairs done on time (work-order SLA) | ≥ 90% | 80–90% | < 80% |
+
+Unpaid rent and leases ending soon get no verdict: a fair threshold depends on portfolio size, so
+they show their size and this week's change instead. These are judgment calls for a demo, not
+industry standards; a real team would set its own.
+
 ## Why each chart type
 
 Form follows the data's job (the same notes are behind each chart's ⓘ button, `web/src/chartNotes.ts`):
