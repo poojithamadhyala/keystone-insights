@@ -9,6 +9,7 @@ import {
   NOI_SERIES, NoiByPropertyChart, NoiMonthlyChart, noiByMonth, noiByProperty,
   OccupancyTrendChart, OccupancyTrendTable,
 } from './charts'
+import { CHART_NOTES } from './chartNotes'
 import { ChartCard, DataTable, Legend, StatTile } from './components'
 import { money, moneyCompact, monthLabel, pct } from './format'
 import { filtersToParams, parseFilters, RANGE_PRESETS, rangeFor, type UrlFilters } from './scope'
@@ -102,11 +103,31 @@ export function Dashboard() {
   const noiMonths = noiByMonth(noi.data ?? [])
   const rangeLabel = scope ? `${monthLabel(scope.start)} – ${monthLabel(scope.end)}` : ''
 
+  // One-sentence screen-reader summaries of what each chart shows.
+  const trend = (occ.data?.trend ?? []).filter((t) => t.occupancy != null)
+  const occSummary = trend.length
+    ? `from ${pct(trend[0].occupancy)} in ${monthLabel(trend[0].month)} to ${pct(trend[trend.length - 1].occupancy)} in ${monthLabel(trend[trend.length - 1].month)}`
+    : undefined
+  const bestMonth = [...noiMonths].sort((a, b) => b.noi - a.noi)[0]
+  const noiSummary = bestMonth ? `total ${moneyCompact(noiTotal)}; highest month ${monthLabel(bestMonth.month)} at ${moneyCompact(bestMonth.noi)}` : undefined
+  const biggestBucket = [...agingRows].sort((a, b) => b.current + b.former - (a.current + a.former))[0]
+  const agingSummary = biggestBucket ? `current residents owe ${moneyCompact(delinquentCurrent)}; largest bucket ${biggestBucket.bucket} days` : undefined
+  const peak = [...expRows].sort((a, b) => b.leases - a.leases)[0]
+  const expSummary = peak ? `busiest month ${monthLabel(peak.month)} with ${peak.leases} leases` : undefined
+  const noiPropSummary = noiProps.length
+    ? `highest ${noiProps[0].property} at ${moneyCompact(noiProps[0].noi)}, lowest ${noiProps[noiProps.length - 1].property} at ${moneyCompact(noiProps[noiProps.length - 1].noi)}`
+    : undefined
+
   const setFilters = (f: UrlFilters) => setParams(filtersToParams(f))
   const keep = filtersToParams({ ...filters, propertyIds: [] }).toString()
 
   if (meta.error) {
-    return <p className="p-6 text-critical">API unavailable: {meta.error}. Is `make up` running?</p>
+    return (
+      <div role="alert" className="space-y-2 p-6">
+        <p className="text-critical">Couldn't reach the API: {meta.error}</p>
+        <button type="button" onClick={meta.reload} className="rounded border border-border px-3 py-1 text-sm">Retry</button>
+      </div>
+    )
   }
 
   return (
@@ -141,11 +162,14 @@ export function Dashboard() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard title="Occupancy" subtitle="Share of units leased on the 1st of each month"
-                   loading={occ.loading} error={occ.error}
+                   loading={occ.loading} ready={!!occ.data} error={occ.error} onRetry={occ.reload}
+                   about={CHART_NOTES.occupancy} summary={occSummary}
                    chart={<OccupancyTrendChart data={occ.data?.trend ?? []} />}
                    table={<OccupancyTrendTable data={occ.data?.trend ?? []} />} />
         <ChartCard title="Net operating income" subtitle="Cash basis, by month"
-                   loading={noi.loading} error={noi.error}
+                   loading={noi.loading} ready={!!noi.data} error={noi.error} onRetry={noi.reload}
+                   empty={noi.data && noiMonths.length === 0 && 'No income or expenses in this range.'}
+                   about={CHART_NOTES.noi} summary={noiSummary}
                    legend={<Legend items={NOI_SERIES.map((s) => ({ label: s.label, color: s.color }))} />}
                    chart={<NoiMonthlyChart rows={noiMonths} />}
                    table={<DataTable rows={noiMonths} rowKey={(r) => r.month} columns={[
@@ -155,14 +179,19 @@ export function Dashboard() {
                      { key: 'n', header: 'NOI', align: 'right', render: (r) => money(r.noi) },
                    ]} />} />
         <ChartCard title="Delinquency aging" subtitle={`Outstanding balance by charge month, as of ${meta.data?.as_of ?? ''}`}
-                   loading={aging.loading} error={aging.error}
+                   loading={aging.loading} ready={!!aging.data} error={aging.error} onRetry={aging.reload}
+                   empty={aging.data && aging.data.length === 0 && 'No outstanding balances as of this date.'}
+                   about={CHART_NOTES.aging} summary={agingSummary}
                    chart={<AgingChart rows={agingRows} />} table={<AgingTable rows={agingRows} />} />
         <ChartCard title="Lease expirations" subtitle="Active leases by month of last day, next 12 months"
-                   loading={exp.loading} error={exp.error}
+                   loading={exp.loading} ready={!!exp.data} error={exp.error} onRetry={exp.reload}
+                   empty={exp.data && expRows.length === 0 && 'No active leases end in the next 12 months.'}
+                   about={CHART_NOTES.expirations} summary={expSummary}
                    chart={<ExpirationsChart rows={expRows} />} table={<ExpirationsTable rows={expRows} />} />
         {!lockedId && (
           <ChartCard title="NOI by property" subtitle={`${rangeLabel} · click a bar to drill down`}
-                     loading={noi.loading} error={noi.error}
+                     loading={noi.loading} ready={!!noi.data} error={noi.error} onRetry={noi.reload}
+                     about={CHART_NOTES.noiByProperty} summary={noiPropSummary}
                      chart={<NoiByPropertyChart rows={noiProps}
                                                 onSelect={(id) => navigate(`/properties/${id}?${keep}`)} />}
                      table={<DataTable rows={noiProps} rowKey={(r) => r.property_id} columns={[
@@ -171,14 +200,18 @@ export function Dashboard() {
                      ]} />} />
         )}
         <ChartCard title="Work-order SLA by priority" subtitle="Completed within target; open tickets past target count as misses"
-                   loading={sla.loading} error={sla.error}
+                   loading={sla.loading} ready={!!sla.data} error={sla.error} onRetry={sla.reload}
+                   empty={sla.data && sla.data.length === 0 && 'No work orders opened in this range.'}
+                   about={CHART_NOTES.sla}
                    chart={<SlaTable rows={sla.data ?? []} />} />
       </div>
 
       {lockedId ? (
         <PropertyExtras scope={scope} />
       ) : (
-        <ChartCard title="Properties" loading={occ.loading} error={occ.error} chart={
+        <ChartCard title="Properties" loading={occ.loading} ready={!!occ.data} error={occ.error}
+                   onRetry={occ.reload}
+                   empty={occ.data && occRows.length === 0 && 'No properties match the filter.'} chart={
           <DataTable rows={occRows} rowKey={(r) => r.property_id} columns={[
             { key: 'p', header: 'Property', render: (r) => (
               <Link className="underline" to={`/properties/${r.property_id}?${keep}`}>{r.property}</Link>
@@ -225,11 +258,14 @@ function PropertyExtras({ scope }: { scope: Scope | null }) {
   const total = roll.data?.total ?? 0
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      <ChartCard title="Work-order SLA by category" loading={byCat.loading} error={byCat.error}
+      <ChartCard title="Work-order SLA by category" loading={byCat.loading} ready={!!byCat.data}
+                 error={byCat.error} onRetry={byCat.reload} about={CHART_NOTES.sla}
+                 empty={byCat.data && byCat.data.length === 0 && 'No work orders opened in this range.'}
                  chart={<SlaTable rows={byCat.data ?? []} />} />
-      <div className="lg:col-span-2">
+      <div className="min-w-0 lg:col-span-2">
         <ChartCard title="Rent roll" subtitle={`As of ${roll.data?.as_of ?? ''} · ${total} units`}
-                   loading={roll.loading} error={roll.error} chart={
+                   loading={roll.loading} ready={!!roll.data} error={roll.error} onRetry={roll.reload}
+                   chart={
           <>
             <DataTable rows={roll.data?.rows ?? []} rowKey={(r) => r.unit_id} columns={[
               { key: 'u', header: 'Unit', render: (r) => `${r.unit_number} · ${r.unit_type}` },
