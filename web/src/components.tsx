@@ -1,11 +1,39 @@
 import { useState, type ReactNode } from 'react'
+import { STATUS_LABEL, type Status } from './health'
 
-export function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+const STATUS_STYLE: Record<Status, { icon: string; className: string }> = {
+  good: { icon: '✓', className: 'bg-status-good-bg text-status-good' },
+  warn: { icon: '!', className: 'bg-status-warn-bg text-status-warn' },
+  crit: { icon: '✕', className: 'bg-status-crit-bg text-status-crit' },
+}
+
+/** Status is never color alone: an icon and a word go with it. */
+export function StatusBadge({ status, title }: { status: Status; title?: string }) {
+  const s = STATUS_STYLE[status]
   return (
-    <div role="group" aria-label={label} className="rounded-lg border border-border bg-surface px-4 py-3">
-      <div className="text-sm text-ink-2">{label}</div>
+    <span title={title} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${s.className}`}>
+      <span aria-hidden>{s.icon}</span>
+      {STATUS_LABEL[status]}
+    </span>
+  )
+}
+
+/** A headline number. `term` keeps the industry word next to the plain label; `help` says what
+ *  it means in everyday language; `status` is a rule-of-thumb verdict (see health.ts). */
+export function StatTile({ label, value, sub, term, help, status, statusRule }: {
+  label: string; value: string; sub?: string; term?: string; help?: string
+  status?: Status | null; statusRule?: string
+}) {
+  return (
+    <div role="group" aria-label={label}
+         className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3 shadow-sm">
+      <div className="text-sm text-ink-2">
+        {label}{term && <span className="text-muted"> ({term})</span>}
+      </div>
       <div className="mt-1 text-2xl font-semibold text-ink">{value}</div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}
+      {status && <div className="mt-2"><StatusBadge status={status} title={statusRule} /></div>}
+      {help && <p className="mt-2 border-t border-border pt-2 text-xs leading-snug text-ink-2">{help}</p>}
     </div>
   )
 }

@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
-/* Design tokens (dataviz reference palette). Components use roles, never raw hex, so dark
-   mode is a token swap. Series slots are assigned in fixed order (series-1 first). */
+/* Design tokens (dataviz reference palette + UI roles). Components use roles, never raw hex, so
+   dark mode is a token swap. Series slots are assigned in fixed order (series-1 first).
+   Every text/background pair below was contrast-checked (WCAG AA 4.5:1; DECISIONS.md D-049, D-052). */
 @theme {
   --color-page: #f9f9f7;
   --color-surface: #fcfcfb;
@@ -16,6 +17,17 @@
   --color-series-3: #1baf7a;
   --color-good: #006300;
   --color-critical: #d03b3b;
+  /* brand + welcome-page roles */
+  --color-brand: #1c5cab; /* 6.0-6.5:1 as text on every light surface */
+  --color-brand-fg: #ffffff; /* text on brand: 6.6:1 */
+  --color-hero: #eef4fc;
+  /* status roles: text color on its own tinted background, always with an icon + label */
+  --color-status-good: #006300;
+  --color-status-good-bg: #e8f4e8;
+  --color-status-warn: #7a4f00;
+  --color-status-warn-bg: #fdf3dc;
+  --color-status-crit: #b42828;
+  --color-status-crit-bg: #fbe9e9;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -33,6 +45,15 @@
     --color-series-2: #d95926;
     --color-series-3: #199e70;
     --color-good: #0ca30c;
+    --color-brand: #86b6ef;
+    --color-brand-fg: #0d0d0d;
+    --color-hero: #16202c;
+    --color-status-good: #3fbf3f;
+    --color-status-good-bg: #14261a;
+    --color-status-warn: #e0a100;
+    --color-status-warn-bg: #2b2410;
+    --color-status-crit: #e66767;
+    --color-status-crit-bg: #2d1717;
   }
 }
 :root[data-theme="dark"] {
@@ -48,6 +69,15 @@
   --color-series-2: #d95926;
   --color-series-3: #199e70;
   --color-good: #0ca30c;
+  --color-brand: #86b6ef;
+  --color-brand-fg: #0d0d0d;
+  --color-hero: #16202c;
+  --color-status-good: #3fbf3f;
+  --color-status-good-bg: #14261a;
+  --color-status-warn: #e0a100;
+  --color-status-warn-bg: #2b2410;
+  --color-status-crit: #e66767;
+  --color-status-crit-bg: #2d1717;
 }
 
 body {
