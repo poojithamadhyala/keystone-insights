@@ -30,7 +30,10 @@ class Settings(BaseSettings):
     seed: int = 42
 
     # Public demo (docs/shaping/public-demo.md). Defaults are for local development.
-    cors_origins: str = "http://localhost:5173"  # comma-separated
+    cors_origins: str = "http://localhost:5173"  # comma-separated; scheme optional (https assumed)
+    cors_origin_regex: str = (
+        ""  # e.g. Vercel preview URLs: ^https://myproject-[a-z0-9-]+\.vercel\.app$
+    )
     demo_mode: bool = False  # labels the UI, enables the guards below
     daily_spend_cap_usd: float = 2.0  # Claude spend per UTC day before cached answers kick in
     agent_questions_per_hour: int = 10  # per client IP
@@ -53,7 +56,14 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        """Browsers send Origin as scheme://host with no trailing slash, and CORS needs an exact
+        match. So "keystone.vercel.app/" becomes "https://keystone.vercel.app"."""
+        out = []
+        for raw in self.cors_origins.split(","):
+            o = raw.strip().rstrip("/")
+            if o:
+                out.append(o if "://" in o else f"https://{o}")
+        return out
 
 
 @lru_cache

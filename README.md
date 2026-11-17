@@ -2,6 +2,8 @@
 
 A property-management reporting platform with an AI agent that answers questions about portfolio data and documents. **All data is synthetic.** There are no real companies, people or properties.
 
+**Live demo:** https://keystone-insights-nu.vercel.app. The free API host sleeps when idle, so the first visit can take up to a minute ("Waking up the demo API…"). AI answers are rate-limited and capped at $2/day; after that, the suggested questions show recorded answers.
+
 > Work in progress. Data, KPIs, dashboard, document search, the AI agent and the weekly digest are done; the public demo is next. The architecture diagram, benchmark table and limitations are filled in as later milestones land.
 
 ![Portfolio overview](docs/screenshots/overview.png)

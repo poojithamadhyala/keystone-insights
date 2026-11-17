@@ -3,6 +3,16 @@
 /** API origin: the Vite dev proxy locally ('/api'), the Render URL on the public demo. */
 export const API_BASE = ((import.meta.env.VITE_API_URL as string | undefined) ?? '/api').replace(/\/$/, '')
 
+/** Vite bakes VITE_API_URL into the bundle at BUILD time. A production build made without it has
+ *  no API to talk to (on Vercel, /api/* just returns the app's own index.html), so say so plainly. */
+export function apiConfigError(env: { PROD: boolean; VITE_API_URL?: string }): string | null {
+  if (env.PROD && !env.VITE_API_URL) {
+    return 'This build was made without VITE_API_URL. Set it to the API URL in the hosting settings and redeploy.'
+  }
+  return null
+}
+export const API_CONFIG_ERROR = apiConfigError(import.meta.env as { PROD: boolean; VITE_API_URL?: string })
+
 /** Turn a FastAPI error response into a readable message (e.g. the demo's 429 text). */
 export async function errorMessage(res: Response): Promise<string> {
   try {

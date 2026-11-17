@@ -181,3 +181,14 @@ All of it was exercised against the real Docker image in demo mode at $0 (spend 
 
 ### D-045 Hosting shape
 Vercel serves the static build (`web/vercel.json`, SPA rewrites); `VITE_API_URL` is the only value the browser gets. Render runs the existing API image from `render.yaml`; secrets are `sync: false`, so they're entered in Render's dashboard. The container runs Alembic on boot (idempotent) and binds `$PORT`. Neon holds the seeded data (23 MB of the 0.5 GB free tier), seeded from a laptop with `make seed-remote` over a direct (non-pooled) connection. Render's free plan sleeps when idle, so the web app gates on `/health` and shows a "Waking up the demo API" screen with elapsed seconds instead of errors. CI now builds the web app and scans the bundle for key-like strings and server-side variable names; a planted fake key was caught.
+
+### D-046 Deploy fixes from the first real deploy
+Four problems came up while deploying to Vercel, Render and Neon. Each is now fixed in code or in `docs/deploy.md`:
+* **Render didn't prompt for every `sync: false` key** (`DIGEST_RUN_TOKEN`, `CORS_ORIGINS`). I can't see from here why Render skipped those two prompts. Non-secret values (`CORS_ORIGINS`, `CORS_ORIGIN_REGEX`) now live in `render.yaml`, and the guide has an explicit "check all five secrets exist" step.
+* **`CORS_ORIGINS` without `https://` silently blocked the app.** Browsers send `Origin: https://host` and CORS needs an exact match. The API now normalises entries (adds `https://`, strips a trailing `/`); tested.
+* **`VITE_API_URL` missing from the first Vercel build.** Vite inlines it at build time, so it must be set before the first deploy, or the app redeployed. A production build without it now says so instead of showing "waking up" for 150 s. If `/health` returns HTML (the URL points at the web app), that's reported too.
+* **Vercel preview URLs were blocked by CORS.** `CORS_ORIGIN_REGEX` admits `keystone-insights-*.vercel.app`; tests show that look-alikes (`….vercel.app.evil.com`, `http://`) are rejected. CORS isn't the security boundary for this public, unauthenticated demo API; the rate limits and spend cap are.
+
+**Also found:** the "Facts-only fallback" preview reported after deploy came from the *local* app. My demo-mode simulation (D-044, run with the spend cap at $0) had written a facts-only digest into the local database. The live database had never stored a fallback, and its first real build verified (all numbers matched, $0.02). Lesson: run simulations against a throwaway database. The local preview was rebuilt.
+
+**Not yet measured:** Render memory after a document question, and cold-start time. 382 MiB was measured locally in Docker, not on Render. The steps are in `docs/deploy.md` §5; the numbers will be recorded here once measured.
