@@ -17,7 +17,8 @@ from evals.bench_report import update_benchmarks
 
 LIGHTHOUSE = "lighthouse@12.2.1"
 PAGES = {
-    "Portfolio overview": "/",
+    "Welcome page": "/",
+    "Portfolio dashboard": "/dashboard",
     "Property drill-down": "/properties/1",
     "Weekly digest": "/digest",
 }
