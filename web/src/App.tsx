@@ -13,12 +13,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const { demo_mode } = useApiInfo()
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-4">
+      <header className="flex items-center justify-between gap-2 border-b border-border bg-surface px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           <span className="text-lg font-semibold">LeaseLens</span>
-          <nav aria-label="Main" className="flex gap-1">
+          <nav aria-label="Main" className="flex gap-1 whitespace-nowrap">
             <NavLink to="/" end className={navClass}>Dashboard</NavLink>
-            <NavLink to="/digest" className={navClass}>Weekly digest</NavLink>
+            <NavLink to="/digest" className={navClass}>
+              <span className="sm:hidden">Digest</span><span className="hidden sm:inline">Weekly digest</span>
+            </NavLink>
           </nav>
           {demo_mode && (
             <span className="hidden rounded border border-border px-2 py-0.5 text-xs text-muted md:inline"
@@ -28,8 +30,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           )}
         </div>
         <button type="button" onClick={() => setChatOpen((v) => !v)} aria-expanded={chatOpen}
-                className="rounded-md bg-ink px-3 py-1.5 text-sm text-surface">
-          Ask LeaseLens
+                className="shrink-0 whitespace-nowrap rounded-md bg-ink px-3 py-1.5 text-sm text-surface">
+          Ask<span className="hidden sm:inline"> LeaseLens</span>
         </button>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6">{children}</main>
