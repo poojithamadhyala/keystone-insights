@@ -5,13 +5,14 @@ import { chromium } from 'playwright'
 const BASE = process.env.WEB_URL ?? 'http://localhost:5173'
 const OUT = process.env.OUT_DIR ?? '../docs/screenshots'
 const shots = [
-  { name: 'overview', path: '/' },
+  { name: 'home', path: '/', wait: 'How is the portfolio doing?' },
+  { name: 'overview', path: '/dashboard' },
   { name: 'property', path: '/properties/1' },
-  { name: 'overview-dark', path: '/', dark: true },
+  { name: 'overview-dark', path: '/dashboard', dark: true },
   { name: 'digest', path: '/digest', wait: 'Preview (exactly what Slack receives)' },
   // Live agent call (costs a few cents): opens the panel and asks a suggested question.
-  { name: 'agent-chart', path: '/', chat: 'Show occupancy by property as a bar chart.' },
-  { name: 'agent-sql', path: '/', chat: 'Which properties have the most rent outstanding from current residents?', cite: 'S1' },
+  { name: 'agent-chart', path: '/dashboard', chat: 'Show occupancy by property as a bar chart.' },
+  { name: 'agent-sql', path: '/dashboard', chat: 'Which properties have the most rent outstanding from current residents?', cite: 'S1' },
 ]
 
 mkdirSync(OUT, { recursive: true })

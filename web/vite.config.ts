@@ -11,6 +11,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: process.env.API_URL ?? 'http://localhost:8000',
+        changeOrigin: true, // hosted APIs (Render) route by Host header
         rewrite: (p) => p.replace(/^\/api/, ''),
       },
     },

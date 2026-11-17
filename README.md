@@ -14,6 +14,7 @@ that, the suggested questions show recorded answers.
 
 | | |
 |---|---|
+| **Welcome page** | Says what the app is in one sentence, then shows four live "how is the portfolio doing?" cards in plain English (apartments rented, unpaid rent, leases ending soon, repairs done on time), each with a verdict (Healthy / Keep an eye on / Needs attention) and the rule behind it. |
 | **Reporting dashboard** | Occupancy, NOI, delinquency aging, lease expirations, work-order SLA and rent roll for a 20-property portfolio, with property and date filters, a drill-down, a table view for every chart, and dark mode. Every KPI is defined in plain SQL and tested against a hand-calculated fixture. |
 | **"Ask LeaseLens" agent** | Claude answers ad-hoc questions with three tools: read-only text-to-SQL, document search over leases and SOPs, and charts. Every number cites its source: query results [S#] (with **Show SQL**) or document passages [D#]. |
 | **Weekly digest** | Every Monday: delinquency week over week, leases expiring in 90 days, SLA breaches. The numbers come from SQL and Claude writes the summary. **Code checks every number in the summary against the data**; if one doesn't match, a facts-only version is sent instead. Delivered to Slack. |
@@ -22,9 +23,9 @@ that, the suggested questions show recorded answers.
 
 What to show and say, in order (it matches the GIF):
 
-1. **Overview (10 s).** "Portfolio KPIs for 3,000 synthetic units. Each tile is one SQL definition, tested against hand-worked numbers. Filters live in the URL, so a view can be shared."
-2. **Drill-down (10 s).** Click a property. "Same KPIs scoped to one asset, plus the rent roll. Each chart has a table view and an ⓘ note on why it's that chart type."
-3. **Ask LeaseLens (25 s).** Click a suggested question. "Claude writes the SQL, but it runs through a guard and as a read-only database role, so it can't change anything. Every number cites its source. Here's the exact SQL behind it." Open **Show SQL**.
+1. **Welcome page (10 s).** "This is the first thing a non-expert sees: what the app does, and four plain-English health checks with the rule behind each verdict. All the numbers are live."
+2. **Dashboard and drill-down (15 s).** "Every tile says what it means in everyday words, with the industry term in brackets. Each one is a single SQL definition, tested against hand-worked numbers. Click a building to drill in."
+3. **Ask LeaseLens (20 s).** Click a suggested question. "Claude writes the SQL, but it runs through a guard and as a read-only database role, so it can't change anything. Every number cites its source. Here's the exact SQL behind it." Open **Show SQL**.
 4. **Weekly digest (15 s).** "Every Monday this goes to Slack. The model only writes the prose. Code checks every number against the SQL facts, and if any number doesn't match, the summary is withheld and a facts-only version goes out. In 10 test builds, all 10 summaries passed."
 
 ## Architecture
@@ -73,7 +74,7 @@ git clone https://github.com/poojithamadhyala/keystone-insights.git && cd keysto
 cp .env.example .env      # add keys here (and only here)
 make demo                 # build, start, migrate, seed → http://localhost:5173
 make ingest               # one time: index the documents in Pinecone (for the agent)
-make check                # lint, types, 88 Python + 27 web tests (what CI runs)
+make check                # lint, types, 88 Python + 34 web tests (what CI runs)
 ```
 
 Deploying your own copy: [docs/deploy.md](docs/deploy.md).
@@ -96,8 +97,8 @@ valid citations 18/18. $0.015 per question; median 5.5 s.
 
 **Digest** (`make bench-digest`): 10/10 summaries passed the number check ($0.207 for 10 builds).
 
-**Accessibility** (`make bench-a11y`, Lighthouse): 100 / 100 / 100 on the overview, drill-down
-and digest pages.
+**Accessibility** (`make bench-a11y`, Lighthouse): 100 on all four pages (welcome, dashboard,
+drill-down, weekly summary).
 
 ## How I built this with Claude Code
 

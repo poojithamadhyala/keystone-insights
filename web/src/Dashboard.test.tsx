@@ -56,17 +56,21 @@ function tile(label: string) {
 
 test('portfolio overview shows KPI tiles from the API', async () => {
   renderAt('/')
-  expect(await screen.findByText('Portfolio overview')).toBeInTheDocument()
-  expect(await within(tile('Occupancy')).findByText('75.0%')).toBeInTheDocument()
-  expect(within(tile('NOI')).getByText('$3.5K')).toBeInTheDocument()
-  expect(within(tile('Work-order SLA')).getByText('80.0%')).toBeInTheDocument()
-  expect(within(tile('Leases expiring')).getByText('2')).toBeInTheDocument()
+  expect(await screen.findByText('Portfolio dashboard')).toBeInTheDocument()
+  expect(await within(tile('Apartments rented')).findByText('75.0%')).toBeInTheDocument()
+  expect(within(tile('Profit from operations')).getByText('$3.5K')).toBeInTheDocument()
+  expect(within(tile('Repairs done on time')).getByText('80.0%')).toBeInTheDocument()
+  expect(within(tile('Leases ending soon')).getByText('2')).toBeInTheDocument()
+  // plain-English layer: rule-of-thumb verdicts come with words, not just color
+  expect(within(tile('Apartments rented')).getByText('Needs attention')).toBeInTheDocument() // 75% < 90%
+  expect(within(tile('Repairs done on time')).getByText('Keep an eye on')).toBeInTheDocument() // 80%
+  expect(within(tile('Apartments rented')).getByText(/Share of apartments with a tenant today/)).toBeInTheDocument()
 })
 
 test('filters are passed to the API as query params', async () => {
   renderAt('/?months=3&p=1')
-  await screen.findByText('Portfolio overview')
-  await within(tile('Occupancy')).findByText('75.0%')
+  await screen.findByText('Portfolio dashboard')
+  await within(tile('Apartments rented')).findByText('75.0%')
   const occCall = fetchMock.mock.calls.map((c) => c[0]).find((u) => u.startsWith('/api/kpis/occupancy'))
   expect(occCall).toBe('/api/kpis/occupancy?property_id=1&start=2026-08-01&end=2026-10-01')
 })

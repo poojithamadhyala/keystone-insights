@@ -66,13 +66,14 @@ Every number in the written summary must match a SQL fact (rounding or truncatio
 ## Accessibility (Lighthouse)
 
 - **Command:** `make bench-a11y`
-- **Date:** 2026-11-16
+- **Date:** 2026-11-17
 - **Tool:** lighthouse@12.2.1, headless Chrome, light mode, desktop viewport
 - **Target:** `http://localhost:5174`
 
 | Page | Score | Failing audits |
 |---|---|---|
-| Portfolio overview | 100 | none |
+| Welcome page | 100 | none |
+| Portfolio dashboard | 100 | none |
 | Property drill-down | 100 | none |
 | Weekly digest | 100 | none |
 

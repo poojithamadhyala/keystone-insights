@@ -6,6 +6,20 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-17
+
+### Added
+- Welcome page (`/`): what the app does in plain words, four live health cards with verdicts
+  (Healthy / Keep an eye on / Needs attention) and their rules, "what you can do here", "how the
+  AI is kept honest", and a live 12-month trend card.
+- Plain-English labels and explanations on every dashboard and weekly-summary tile, with the
+  industry term in parentheses; a logo, brand color and refreshed navigation.
+
+### Changed
+- The dashboard moved to `/dashboard` (`/properties/:id` unchanged). "Weekly digest" is now
+  "Weekly summary" in the UI.
+- README GIF and walkthrough start on the welcome page; accessibility checked on four pages.
+
 ## [1.0.0] - 2026-11-16
 
 ### Added
@@ -105,7 +119,8 @@ Public demo: https://keystone-insights-nu.vercel.app
   `make bench-rag`.
 - Secret scan in `make check`, CI and a pre-commit hook.
 
-[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.3.0...v0.4.0

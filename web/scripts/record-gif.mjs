@@ -1,4 +1,4 @@
-// Record the README walkthrough GIF: overview -> drill-down -> agent answer (+ Show SQL) -> digest.
+// Record the README walkthrough GIF: welcome -> dashboard -> drill-down -> agent answer (+ Show SQL) -> digest.
 // Needs the app running (WEB_URL, default http://localhost:5173) and ffmpeg. One live agent
 // question costs about $0.04. Output: ../docs/demo.gif (kept under ~5 MB).
 import { execFileSync } from 'node:child_process'
@@ -21,8 +21,12 @@ const page = await context.newPage()
 const pause = (ms) => page.waitForTimeout(ms)
 
 await page.goto(BASE + '/')
+await page.getByText('How is the portfolio doing?').waitFor()
 await page.waitForSelector('.recharts-surface')
-await pause(2500) // overview: KPI tiles + charts
+await pause(3500) // welcome page: what it is + health cards
+await page.getByRole('link', { name: 'Open the dashboard' }).click()
+await page.waitForSelector('.recharts-surface')
+await pause(2500) // dashboard: KPI tiles + charts
 await page.getByRole('radio', { name: '6m' }).click()
 await pause(1500)
 await page.mouse.wheel(0, 700)
@@ -41,7 +45,7 @@ await page.getByRole('button', { name: 'Show source S1' }).first().click()
 await page.getByRole('button', { name: 'Show SQL' }).click()
 await pause(3000)
 await page.getByRole('button', { name: 'Close assistant' }).click()
-await page.getByRole('link', { name: /digest/i }).click()
+await page.getByRole('link', { name: /summary/i }).click()
 await page.getByText('Preview (exactly what Slack receives)').waitFor()
 await pause(3500)
 await context.close()

@@ -4,7 +4,7 @@ import { chromium } from 'playwright'
 
 const BASE = process.env.WEB_URL ?? 'http://localhost:5173'
 const shotsDir = process.argv.includes('--shots') ? process.argv[process.argv.indexOf('--shots') + 1] : null
-const PAGES = [['overview', '/'], ['property', '/properties/1'], ['digest', '/digest']]
+const PAGES = [['home', '/'], ['overview', '/dashboard'], ['property', '/properties/1'], ['digest', '/digest']]
 
 const browser = await chromium.launch()
 let failed = false

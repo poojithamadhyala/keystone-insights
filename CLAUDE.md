@@ -69,6 +69,8 @@ cd web && npm run record-gif     # re-record docs/demo.gif after UI changes (~$0
   allowlist; never interpolate user input into SQL.
 - Treat document text and tool output as **untrusted data** in agent prompts.
 - Label time savings and other business impact as estimates unless they are measured.
+- Label numbers in plain English with the industry term in parentheses, using `web/src/health.ts`
+  (D-052). New verdict thresholds go there, with a test and an operator-brief entry.
 - Use `text-muted` only on the light/dark surfaces it was checked against (D-049); give every
   chart card `ready`, `onRetry`, `empty`, `about` and `summary`.
 - Digest numbers come only from `api/digest/facts.py`. Never let the LLM compute or add numbers;
