@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-16
+
+Public demo: https://keystone-insights-nu.vercel.app
+
 ### Added
 - Public-demo hosting: `render.yaml` (API on Render), `web/vercel.json` (web on Vercel), Neon via
   `DATABASE_URL` and `make seed-remote`; step-by-step `docs/deploy.md`.
@@ -18,6 +22,9 @@ All notable changes to this project are documented here. The format follows
 - Agent queries on managed Postgres (non-superuser): migration 0004 grants the read-only role to
   the app user (`permission denied to set role` on Postgres 16+).
 - Digest fallback footer wording.
+- Deploy fixes: CORS origins normalised (`https://` added, trailing `/` stripped),
+  `CORS_ORIGIN_REGEX` for Vercel preview URLs, non-secret Render values set in `render.yaml`,
+  a clear error for production builds without `VITE_API_URL`, and the deploy guide corrected.
 
 ## [0.4.0] - 2026-11-16
 
@@ -82,7 +89,8 @@ All notable changes to this project are documented here. The format follows
   `make bench-rag`.
 - Secret scan in `make check`, CI and a pre-commit hook.
 
-[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/poojithamadhyala/keystone-insights/compare/v0.1.0...v0.2.0
