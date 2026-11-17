@@ -10,6 +10,7 @@ import {
   OccupancyTrendChart, OccupancyTrendTable,
 } from './charts'
 import { CHART_NOTES } from './chartNotes'
+import { judge, PLAIN, RULES } from './health'
 import { ChartCard, DataTable, Legend, StatTile } from './components'
 import { money, moneyCompact, monthLabel, pct } from './format'
 import { filtersToParams, parseFilters, RANGE_PRESETS, rangeFor, type UrlFilters } from './scope'
@@ -135,10 +136,10 @@ export function Dashboard() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           {lockedId && (
-            <Link to={`/?${keep}`} className="text-sm text-ink-2 underline">← Portfolio</Link>
+            <Link to={`/dashboard?${keep}`} className="text-sm text-brand underline underline-offset-2">← All buildings</Link>
           )}
           <h1 className="text-xl font-semibold">
-            {lockedId ? property?.name ?? 'Property' : 'Portfolio overview'}
+            {lockedId ? property?.name ?? 'Building' : 'Portfolio dashboard'}
           </h1>
           <p className="text-sm text-muted">
             {property ? `${property.city}, ${property.state} · ${property.units} units · ` : ''}
@@ -150,23 +151,29 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatTile label="Occupancy" value={units ? pct(occupied / units) : '—'}
-                  sub={`${occupied.toLocaleString()} of ${units.toLocaleString()} units`} />
-        <StatTile label="NOI" value={moneyCompact(noiTotal)} sub={rangeLabel} />
-        <StatTile label="Delinquent (current residents)" value={moneyCompact(delinquentCurrent)}
-                  sub="all aging buckets" />
-        <StatTile label="Leases expiring" value={String(next90)} sub="next 3 months" />
-        <StatTile label="Work-order SLA" value={slaJudged ? pct(slaMet / slaJudged) : '—'}
-                  sub={`${slaMet.toLocaleString()} of ${slaJudged.toLocaleString()} on time`} />
+        <StatTile label={PLAIN.occupancy.label} term={PLAIN.occupancy.term} help={PLAIN.occupancy.help}
+                  value={units ? pct(occupied / units) : '—'}
+                  sub={`${occupied.toLocaleString()} of ${units.toLocaleString()} apartments`}
+                  status={judge(units ? occupied / units : null, RULES.occupancy)} statusRule={RULES.occupancy.explain} />
+        <StatTile label={PLAIN.noi.label} term={PLAIN.noi.term} help={PLAIN.noi.help}
+                  value={moneyCompact(noiTotal)} sub={rangeLabel} />
+        <StatTile label={PLAIN.delinquent.label} term={PLAIN.delinquent.term} help={PLAIN.delinquent.help}
+                  value={moneyCompact(delinquentCurrent)} sub="owed by current tenants" />
+        <StatTile label={PLAIN.expiring.label} term={PLAIN.expiring.term} help={PLAIN.expiring.help}
+                  value={String(next90)} sub="in the next 3 months" />
+        <StatTile label={PLAIN.repairs.label} term={PLAIN.repairs.term} help={PLAIN.repairs.help}
+                  value={slaJudged ? pct(slaMet / slaJudged) : '—'}
+                  sub={`${slaMet.toLocaleString()} of ${slaJudged.toLocaleString()} on time`}
+                  status={judge(slaJudged ? slaMet / slaJudged : null, RULES.repairsOnTime)} statusRule={RULES.repairsOnTime.explain} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ChartCard title="Occupancy" subtitle="Share of units leased on the 1st of each month"
+        <ChartCard title="Apartments rented over time" subtitle="Share of apartments with a tenant on the 1st of each month"
                    loading={occ.loading} ready={!!occ.data} error={occ.error} onRetry={occ.reload}
                    about={CHART_NOTES.occupancy} summary={occSummary}
                    chart={<OccupancyTrendChart data={occ.data?.trend ?? []} />}
                    table={<OccupancyTrendTable data={occ.data?.trend ?? []} />} />
-        <ChartCard title="Net operating income" subtitle="Cash basis, by month"
+        <ChartCard title="Profit from operations (NOI)" subtitle="Rent collected minus running costs, by month (cash basis)"
                    loading={noi.loading} ready={!!noi.data} error={noi.error} onRetry={noi.reload}
                    empty={noi.data && noiMonths.length === 0 && 'No income or expenses in this range.'}
                    about={CHART_NOTES.noi} summary={noiSummary}
@@ -178,18 +185,18 @@ export function Dashboard() {
                      { key: 'e', header: 'Expenses', align: 'right', render: (r) => money(r.expenses) },
                      { key: 'n', header: 'NOI', align: 'right', render: (r) => money(r.noi) },
                    ]} />} />
-        <ChartCard title="Delinquency aging" subtitle={`Outstanding balance by charge month, as of ${meta.data?.as_of ?? ''}`}
+        <ChartCard title="Unpaid rent, by how overdue" subtitle={`Current and former tenants, grouped by the month the rent was due · as of ${meta.data?.as_of ?? ''}`}
                    loading={aging.loading} ready={!!aging.data} error={aging.error} onRetry={aging.reload}
                    empty={aging.data && aging.data.length === 0 && 'No outstanding balances as of this date.'}
                    about={CHART_NOTES.aging} summary={agingSummary}
                    chart={<AgingChart rows={agingRows} />} table={<AgingTable rows={agingRows} />} />
-        <ChartCard title="Lease expirations" subtitle="Active leases by month of last day, next 12 months"
+        <ChartCard title="Leases ending in the next 12 months" subtitle="Active leases, by the month of their last day"
                    loading={exp.loading} ready={!!exp.data} error={exp.error} onRetry={exp.reload}
                    empty={exp.data && expRows.length === 0 && 'No active leases end in the next 12 months.'}
                    about={CHART_NOTES.expirations} summary={expSummary}
                    chart={<ExpirationsChart rows={expRows} />} table={<ExpirationsTable rows={expRows} />} />
         {!lockedId && (
-          <ChartCard title="NOI by property" subtitle={`${rangeLabel} · click a bar to drill down`}
+          <ChartCard title="Profit by building" subtitle={`${rangeLabel} · click a bar to open that building`}
                      loading={noi.loading} ready={!!noi.data} error={noi.error} onRetry={noi.reload}
                      about={CHART_NOTES.noiByProperty} summary={noiPropSummary}
                      chart={<NoiByPropertyChart rows={noiProps}
@@ -199,7 +206,7 @@ export function Dashboard() {
                        { key: 'n', header: 'NOI', align: 'right', render: (r) => money(r.noi) },
                      ]} />} />
         )}
-        <ChartCard title="Work-order SLA by priority" subtitle="Completed within target; open tickets past target count as misses"
+        <ChartCard title="Repairs done on time, by urgency" subtitle="Deadlines: emergency 24 h, high 3 days, normal 7 days, low 14 days. Still-open repairs past their deadline count as late."
                    loading={sla.loading} ready={!!sla.data} error={sla.error} onRetry={sla.reload}
                    empty={sla.data && sla.data.length === 0 && 'No work orders opened in this range.'}
                    about={CHART_NOTES.sla}
@@ -209,7 +216,7 @@ export function Dashboard() {
       {lockedId ? (
         <PropertyExtras scope={scope} />
       ) : (
-        <ChartCard title="Properties" loading={occ.loading} ready={!!occ.data} error={occ.error}
+        <ChartCard title="Buildings" loading={occ.loading} ready={!!occ.data} error={occ.error}
                    onRetry={occ.reload}
                    empty={occ.data && occRows.length === 0 && 'No properties match the filter.'} chart={
           <DataTable rows={occRows} rowKey={(r) => r.property_id} columns={[

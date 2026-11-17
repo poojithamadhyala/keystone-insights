@@ -86,9 +86,9 @@ export function DigestPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Weekly portfolio digest</h1>
+          <h1 className="text-xl font-semibold">Weekly summary</h1>
           <p className="text-sm text-muted">
-            Every number comes from SQL. Claude writes only the summary, and it's withheld if any number doesn't match.
+            The short update the team gets in Slack every Monday. Every number comes from the database; the AI only writes the sentences, and a checker withholds them if any number doesn't match.
           </p>
         </div>
         <div className="flex gap-2">
@@ -119,11 +119,11 @@ export function DigestPage() {
       {run && f && (
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <StatTile label="Delinquent (current residents)" value={moneyCompact(f.delinquency.current_residents_this_week)}
+            <StatTile label="Unpaid rent" term="Delinquency" value={moneyCompact(f.delinquency.current_residents_this_week)}
                       sub={`${f.delinquency.change <= 0 ? 'down' : 'up'} ${money(Math.abs(f.delinquency.change))} vs last week`} />
-            <StatTile label={`Leases expiring, next ${f.window_days} days`} value={String(f.expirations.leases)}
-                      sub={`${moneyCompact(f.expirations.monthly_rent)} monthly rent`} />
-            <StatTile label="Open SLA breaches" value={String(f.sla.open_breaches)}
+            <StatTile label={`Leases ending, next ${f.window_days} days`} term="Lease expirations" value={String(f.expirations.leases)}
+                      sub={`${moneyCompact(f.expirations.monthly_rent)} of monthly rent`} />
+            <StatTile label="Repairs overdue right now" term="SLA breaches" value={String(f.sla.open_breaches)}
                       sub={`${f.sla.open_breaches_last_week} last week`} />
           </div>
 
@@ -150,7 +150,7 @@ export function DigestPage() {
               </p>
             </section>
             <div className="min-w-0 lg:col-span-2">
-              <ChartCard title="Oldest open SLA breaches" subtitle="Open past target as of the data date" chart={
+              <ChartCard title="Oldest overdue repairs" subtitle="Still open past their deadline, as of the data date" chart={
                 f.sla.oldest.length === 0 ? <p className="text-sm text-muted">No open breaches.</p> : (
                   <DataTable<Breach> rows={f.sla.oldest} rowKey={(b) => b.work_order_id} columns={[
                     { key: 'w', header: 'WO', render: (b) => `#${b.work_order_id}` },
