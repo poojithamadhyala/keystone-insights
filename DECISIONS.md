@@ -217,3 +217,11 @@ Shaped in `docs/shaping/welcome-redesign.md`; the direction was chosen from thre
 * **Same numbers as the dashboard:** the welcome cards call the same endpoints with the same 12-month window, and the hero's live trend card uses the same occupancy series.
 * **Color tokens were computed, not eyeballed:** brand #1c5cab (6.0–6.5:1 as text), and status text on its own tinted background, checked in both themes. Dark-mode muted grey fails on the status backgrounds (4.29–4.42:1), so status chips never use it. Lighthouse accessibility stays **100 on all four pages**, and there's no horizontal scroll at 375 px.
 * The dev server's proxy now sets `changeOrigin` so local development can point at the hosted API (`API_URL=https://…`), which routes by Host header. It was used while Docker was paused.
+
+## Live measurements
+
+### D-053 Measured on the deployed demo
+* **Cold start: 32.6 s and 27.4 s** to the first `/health` response after the free Render instance had idled (two samples, 2026-11-17, `curl` from a MacBook on a home network). Meanwhile the web app shows "Waking up the demo API…" with elapsed seconds, and gives up only after 150 s. Once warm, the live welcome page rendered with data in 1.9 s.
+* **Accessibility on the live site:** Lighthouse 100 on all four pages (`WEB_URL=https://keystone-insights-nu.vercel.app make bench-a11y`), the same as locally.
+* **Render memory: not yet measured.** It needs Render's Metrics tab after a document question. 382 MiB (local Docker) remains the only figure.
+* At measurement time Vercel had redeployed every merge, but Render was still serving the API from before PR #6 (no `version` in `/health`, preview-URL CORS rejected). Its auto-deploy or Blueprint sync hadn't picked up the merges.

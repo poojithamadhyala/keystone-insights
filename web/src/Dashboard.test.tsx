@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { Dashboard } from './Dashboard'
 
@@ -27,6 +27,9 @@ const responses: Record<string, unknown> = {
 }
 
 const fetchMock = vi.fn(async (url: string) => {
+  // The as-of date answers last on purpose: CI runners are slower, and this test once assumed
+  // the opposite order (flaky in PR #9). Keeping the delay makes that order the normal case.
+  if (url.startsWith('/api/kpis/meta')) await new Promise((r) => setTimeout(r, 50))
   const key = Object.keys(responses).find((k) => url.split('?')[0] === k)
   return new Response(JSON.stringify(key ? responses[key] : {}), { status: key ? 200 : 404 })
 })
@@ -78,6 +81,9 @@ test('filters are passed to the API as query params', async () => {
 test('property drill-down is scoped to that property', async () => {
   renderAt('/properties/1')
   expect(await screen.findByRole('heading', { name: 'Maple Court' })).toBeInTheDocument()
-  const calls = fetchMock.mock.calls.map((c) => c[0])
-  expect(calls.some((u) => u.startsWith('/api/kpis/rent-roll?property_id=1'))).toBe(true)
+  // The rent roll is requested once the as-of date arrives, which may be after the name renders.
+  await waitFor(() => {
+    const calls = fetchMock.mock.calls.map((c) => c[0])
+    expect(calls.some((u) => u.startsWith('/api/kpis/rent-roll?property_id=1'))).toBe(true)
+  })
 })

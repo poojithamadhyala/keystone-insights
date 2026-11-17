@@ -138,8 +138,9 @@ set direction, reviewed every PR and made the calls. The working agreement is wr
 - **No authentication.** The demo is public and read-only by design. CORS is hygiene, not
   security; the rate limits and spend cap are the protection.
 - **The number check is untyped for money vs. counts:** "$18" could match an unrelated "18 days".
-- **Not yet measured on Render:** memory and cold-start time (382 MiB was measured in Docker
-  locally). Accessibility is automated checks only; no manual screen-reader testing yet.
+- **Slow cold start on the free tier:** 32.6 s and 27.4 s to the first response after idle (two
+  samples). Render memory isn't measured yet (382 MiB in local Docker). Accessibility is automated
+  checks only; no manual screen-reader testing yet.
 
 ## Future work
 
