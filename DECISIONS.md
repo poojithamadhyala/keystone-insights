@@ -238,3 +238,9 @@ The v1.1.0 welcome page worked, but the user didn't like how it looked. They sup
 * **Photos:** five free-licence Unsplash images (426 KB total, resized to at most 2000 px), credited in the footer and the README. No people and no real company names. An empty-room photo was rejected because it looked like stock.
 * **Motion** (motion@12) uses `MotionConfig reducedMotion="user"`. The figures count up once on first view; with reduced motion, or without IntersectionObserver, they show the final value straight away. Tests stub IntersectionObserver so they read final values.
 * **Result:** Lighthouse accessibility **100 on all four pages** (`make bench-a11y`), no horizontal scroll at 375 px, and 34/34 web tests pass. The README GIF is now 8 fps, 760 px, 64 colours (4.4 MB). The photo hero made the old settings produce 9.2 MB.
+
+## Housekeeping
+
+### D-055 Remove leftovers from the original plan; stop committing screenshots
+After the re-scope (D-030s), Neo4j, MLflow, monitoring, the feature store and Ray became `later` issues, but their scaffolding stayed: empty `graph/`, `ml/` and `monitoring/` packages, Neo4j and MLflow services behind Compose profiles, `make up-all`, and their `.env.example` entries and `.gitignore` lines. Redis was started on every `make up` but no code ever used it. All of that is removed. `make up` now starts postgres, api and web. Whoever picks up a `later` issue adds back exactly what it needs.
+`docs/screenshots/` is no longer tracked. Nothing in the repo referenced those PNGs (the README uses `docs/demo.gif`), the two agent shots were already out of date, and every re-run added about 2 MB of binaries to history. `npm run screenshots` still writes them locally for attaching to PRs. **Trade-off:** git history keeps the old files. Rewriting history isn't worth a force-push on a protected `main`.

@@ -12,7 +12,7 @@ All notable changes to this project are documented here. The format follows
   hero, a full-screen menu on phones, and one light section on the welcome page.
 - Chart colours re-validated for the dark surface (bronze, blue, plum). Status is shown as an
   icon plus a word, not a coloured chip. No text is smaller than 14px.
-- README GIF and screenshots re-recorded.
+- README GIF re-recorded.
 
 ### Added
 - Five free-licence Unsplash photos (credited in the footer and README); subtle motion that
@@ -20,7 +20,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Removed
 - The light theme: the app no longer follows the system light/dark setting and is always dark.
-  The separate dark-mode screenshot is gone.
+- Unused scaffolding from the original plan: empty `graph/`, `ml/` and `monitoring/` packages,
+  the Neo4j, MLflow and Redis services, `make up-all`, and their settings. `make up` now starts
+  postgres, api and web.
+- `docs/screenshots/` is no longer committed (regenerate with `npm run screenshots`).
 
 ## [1.1.0] - 2026-11-17
 

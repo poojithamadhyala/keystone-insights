@@ -27,7 +27,7 @@ properties. Built to show "small, useful, finished" delivery through reviewed PR
 `api/` FastAPI app and KPI SQL · `data/` generator, models, Alembic · `rag/` documents, chunking,
 retrieval · `evals/` eval sets and `make bench-*` runners · `web/` React dashboard ·
 `prompts/` versioned prompt templates · `infra/` Docker, compose, scripts · `docs/` operator
-brief, shaping docs, screenshots.
+brief, shaping docs, deploy guide, README GIF.
 
 ## Commands
 
