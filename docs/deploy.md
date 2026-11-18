@@ -97,12 +97,12 @@ token-protected schedule still sends.)
 
 | Guard | Setting (render.yaml) | Where |
 |---|---|---|
-| Per-IP agent questions | `AGENT_QUESTIONS_PER_HOUR=10` | `api/safeguards.py` |
+| Per-IP agent questions | `AGENT_QUESTIONS_PER_HOUR=10` | `backend/api/safeguards.py` |
 | Per-IP digest builds | `DIGEST_BUILDS_PER_HOUR=3` | same |
 | Daily Claude spend cap (survives restarts) | `DAILY_SPEND_CAP_USD=2` | `llm_spend` table |
-| Per-turn limits | 4,000 output tokens, at most 6 tool rounds, 1,000-character questions | `api/agent/loop.py` |
-| Over budget / no key | recorded answers for the suggested questions, labeled | `api/demo_samples.json` |
+| Per-turn limits | 4,000 output tokens, at most 6 tool rounds, 1,000-character questions | `backend/api/agent/loop.py` |
+| Over budget / no key | recorded answers for the suggested questions, labeled | `backend/api/demo_samples.json` |
 | Keys | server-side only; bundle scanned in CI | `web/scripts/check-bundle.mjs` |
 
 To re-record the cached answers after changing the prompt, tools or data:
-`uv run --group rag python -m api.record_samples` (about $0.20).
+`cd backend && uv run --group rag python -m api.record_samples` (about $0.20).

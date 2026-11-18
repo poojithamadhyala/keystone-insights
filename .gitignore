@@ -19,7 +19,7 @@ web/dist/
 
 # artifacts (regenerable from seeded scripts)
 artifacts/
-data/out/
+backend/data/out/
 # `npm run screenshots` output: attach to PRs, don't commit (the README uses docs/demo.gif)
 docs/screenshots/
 

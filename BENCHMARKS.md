@@ -30,8 +30,8 @@ BM25 hybrid search and metadata filters were also built and measured in v0.1.0. 
 
 - **Command:** `make eval-agent`
 - **Date:** 2026-11-16
-- **Model / prompt:** `claude-opus-5-5` / `prompts/agent/system_v1.md`
-- **Cases:** 23 (ground truth from SQL at run time; see `evals/agent/cases.py`)
+- **Model / prompt:** `claude-opus-5-5` / `backend/prompts/agent/system_v1.md`
+- **Cases:** 23 (ground truth from SQL at run time; see `backend/evals/agent/cases.py`)
 
 | Check | Result | How it's scored |
 |---|---|---|
@@ -52,7 +52,7 @@ Cost: **$0.35** total, $0.015 per question on average. Median latency 5.5 s per 
 
 - **Command:** `make bench-digest`
 - **Date:** 2026-11-16
-- **Model / prompt:** `claude-opus-5-5` / `prompts/digest/narrative_v1.md`
+- **Model / prompt:** `claude-opus-5-5` / `backend/prompts/digest/narrative_v1.md`
 - **Dataset:** digest for the week ending 2026-10-31, built 10 times
 
 | Narratives passing the number check | Rejected numbers | Cost |

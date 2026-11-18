@@ -1,13 +1,18 @@
 """Single source of configuration for every Python component (read from env / .env)."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
+    # .env sits at the repo root (one level above backend/). In Docker it doesn't exist; the
+    # environment comes from Compose or Render instead.
+    model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore", populate_by_name=True)
 
     # Local Docker Postgres. A hosted database (Neon) is configured with DATABASE_URL instead.
     postgres_user: str = "leaselens"

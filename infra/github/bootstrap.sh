@@ -56,7 +56,7 @@ issue() {  # title, labels, body
 issue "Lean RAG: one baseline, one improved method" "feature" \
   "Shape: docs/shaping/lean-rag.md. Remove BM25/filters/ladder, switch to fastembed (ONNX), re-run make bench-rag. Release v0.2.0."
 issue "RAG eval label spot-check (25 items)" "chore" \
-  "Fill verdicts in evals/rag/REVIEW.md, run make rag-review and make bench-rag so label precision appears in BENCHMARKS.md."
+  "Fill verdicts in backend/evals/rag/REVIEW.md, run make rag-review and make bench-rag so label precision appears in BENCHMARKS.md."
 issue "AI agent: query_kpis, search_documents, generate_report + chat panel" "feature" \
   "Shape: docs/shaping/agent.md. Streaming chat with citations and Show SQL; eval suite; mocked-LLM CI smoke test. Release v0.3.0."
 issue "Weekly portfolio digest with number check" "feature" \

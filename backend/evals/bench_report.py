@@ -11,7 +11,8 @@ import re
 import subprocess
 from pathlib import Path
 
-BENCHMARKS = Path("BENCHMARKS.md")
+# BENCHMARKS.md lives at the repo root, one level above backend/.
+BENCHMARKS = Path(__file__).resolve().parents[2] / "BENCHMARKS.md"
 
 
 def hardware() -> str:

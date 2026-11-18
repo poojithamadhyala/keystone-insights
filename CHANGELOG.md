@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Changed
+- The Python back end (`api`, `common`, `data`, `rag`, `evals`, `prompts` and the Python project
+  files) moved into `backend/`, so the top level reads backend / web / infra / docs. `make`
+  targets, deploys and the API's behaviour are unchanged.
+- `python -m evals.digest.bench --render` rebuilds the digest benchmark section from the last
+  saved run without calling the API (the agent eval already had this).
 - New look across the app: dark charcoal with warm off-white text and one bronze accent, Marcellus
   headings and figures, Jost body text, thin outline buttons, a transparent navbar over a photo
   hero, a full-screen menu on phones, and one light section on the welcome page.

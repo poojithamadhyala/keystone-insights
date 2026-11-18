@@ -61,7 +61,7 @@ BENCHMARKS.md).
 | **Questions** | How full are we? What did we net? How much is current residents' rent overdue? How many leases roll soon? Are vendors on time? |
 | **Personas** | Asset director (headline health); property manager (own property via the filter) |
 | **Decision** | Where to look first this week |
-| **Sign-off** | Each tile equals the matching chart or table for the same filters and as-of date. Occupancy = occupied / units on the as-of date. *Verified by `api/tests/test_kpis.py` (occupancy, aging, expirations, NOI, SLA) against a hand-calculated fixture.* |
+| **Sign-off** | Each tile equals the matching chart or table for the same filters and as-of date. Occupancy = occupied / units on the as-of date. *Verified by `backend/api/tests/test_kpis.py` (occupancy, aging, expirations, NOI, SLA) against a hand-calculated fixture.* |
 
 ### Occupancy trend (line)
 
@@ -134,7 +134,7 @@ BENCHMARKS.md).
 | **Personas** | Property manager (unit and lease detail, documents); asset director (cross-property comparisons, charts); accounting (ad-hoc AR questions) |
 | **Decision** | Same decisions as the dashboard, without waiting for an analyst to write SQL or dig through documents |
 | **What it can't do** | Change records, send messages, reveal tenant contact details (not in its data at all), answer questions outside the portfolio |
-| **Sign-off** | Every number traces to a cited query result [S#] (rows and SQL one click away) or document passage [D#]. Agent KPIs use the dashboard's definitions (charge-month aging, exclusive end dates, cash-basis NOI). Read-only by construction: SQL guard, then a read-only transaction as a view-only role. *Verified by `make eval-agent` (correctness, document answers, refusal, injection, faithfulness, citation validity; results in BENCHMARKS.md) and `api/tests/test_agent.py` (writes blocked even with the SQL guard disabled).* |
+| **Sign-off** | Every number traces to a cited query result [S#] (rows and SQL one click away) or document passage [D#]. Agent KPIs use the dashboard's definitions (charge-month aging, exclusive end dates, cash-basis NOI). Read-only by construction: SQL guard, then a read-only transaction as a view-only role. *Verified by `make eval-agent` (correctness, document answers, refusal, injection, faithfulness, citation validity; results in BENCHMARKS.md) and `backend/api/tests/test_agent.py` (writes blocked even with the SQL guard disabled).* |
 | **Manual work it replaces (estimate)** | An analyst writing and checking a one-off SQL query or searching leases for a clause. *Estimate, not measured:* 10–30 minutes per question in a typical team, versus a median of about 5.5 s for the agent in the eval. |
 
 ## Weekly portfolio digest (v0.4.0)
@@ -144,7 +144,7 @@ BENCHMARKS.md).
 | **Questions** | What changed in delinquency this week, and where? Which leases expire in the next 90 days? Which work orders are breaching SLA right now, and which is the oldest? |
 | **Personas** | Asset director (Monday read in Slack); property managers (their property's movers, breaches to chase) |
 | **Decision** | Where to spend this week's follow-up time: collection calls, renewal outreach, vendor escalation |
-| **Sign-off** | Every number comes from SQL using the dashboard's definitions. The current-resident delinquency total equals the dashboard's "Delinquent (current residents)" tile for the same as-of date ($104,673.08 on 2026-10-31). The written summary is sent only if every number in it matches a fact; otherwise the facts-only version goes out, flagged. The preview is the exact stored text Slack receives. *Verified by `api/tests/test_digest.py` (hand-derived facts, planted wrong numbers, preview == payload) and `make bench-digest` (pass rate of the written summary).* |
+| **Sign-off** | Every number comes from SQL using the dashboard's definitions. The current-resident delinquency total equals the dashboard's "Delinquent (current residents)" tile for the same as-of date ($104,673.08 on 2026-10-31). The written summary is sent only if every number in it matches a fact; otherwise the facts-only version goes out, flagged. The preview is the exact stored text Slack receives. *Verified by `backend/api/tests/test_digest.py` (hand-derived facts, planted wrong numbers, preview == payload) and `make bench-digest` (pass rate of the written summary).* |
 
 **Manual work it replaces.** Each Monday someone currently:
 1. exports the aging report, filters to current residents, and compares it with last week's export;

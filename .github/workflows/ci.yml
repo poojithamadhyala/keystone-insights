@@ -17,9 +17,13 @@ jobs:
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U leaselens" --health-interval 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
-      - run: infra/check_secrets.sh
+      - run: infra/check_secrets.sh  # scans the whole repo, so it runs from the root
+        working-directory: .
       - uses: astral-sh/setup-uv@v6
       - run: uv sync
       - run: uv run ruff check .
