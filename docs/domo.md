@@ -14,10 +14,10 @@ is swapping the data source, not rebuilding the UI.
 
 1. **Get the data into Domo.** Load the `reporting` views as Domo DataSets, either through a
    Postgres connector on a schedule or by uploading extracts. Rebuild the KPI SQL
-   (`api/kpis/queries.py`) as Domo DataFlows (SQL or Magic ETL), so occupancy, aging,
+   (`backend/api/kpis/queries.py`) as Domo DataFlows (SQL or Magic ETL), so occupancy, aging,
    expirations, NOI and SLA come out as their own DataSets. The SQL is explicit and commented, so
    this is a translation, not a redesign. The KPI tests' hand-worked fixture
-   (`api/tests/conftest.py`) is the acceptance check for the translated logic.
+   (`backend/api/tests/conftest.py`) is the acceptance check for the translated logic.
 2. **Create the app shell.** Install Domo's app CLI (`ryuu`), `domo login` to the instance, and
    add a `manifest.json` that names the app and maps **aliases** (e.g. `occupancy`, `aging`) to
    the DataSet IDs from step 1.

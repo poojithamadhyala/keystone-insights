@@ -161,6 +161,7 @@ Ksenia Obukhova (@fez_wee; house model). Fonts: Marcellus and Jost (Google Fonts
 
 ## Repo map
 
-`api/` FastAPI (KPIs, agent, digest, safeguards) · `web/` React dashboard · `data/` generator +
-migrations · `rag/` document search · `evals/` benchmarks and eval sets · `prompts/` versioned
-prompts · `docs/` operator brief, shaping docs, deploy guide · `infra/` Docker, scripts
+`backend/` Python: `api/` FastAPI (KPIs, agent, digest, safeguards), `data/` generator +
+migrations, `rag/` document search, `evals/` benchmarks and eval sets, `prompts/` versioned
+prompts · `web/` React dashboard · `docs/` operator brief, shaping docs, deploy guide ·
+`infra/` Docker, scripts
