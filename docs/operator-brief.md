@@ -46,8 +46,11 @@ Form follows the data's job (the same notes are behind each chart's ⓘ button, 
 | Work-order SLA | Table | Four priorities with exact on-time rates and medians; the precise numbers matter more than shape. |
 
 Every chart also has a table view, a screen-reader summary, and a palette validated for
-color-vision deficiency. Text meets WCAG AA contrast (Lighthouse accessibility 100 on all three
-pages; see BENCHMARKS.md).
+color-vision deficiency on the dark chart surface: bronze #B58E48, blue #507FCD, plum #973F6E
+(worst colour-blind separation ΔE 14.7, all pairs). Plum is low-contrast against the card
+(2.6:1), so every multi-series chart keeps its legend and table view. Text meets WCAG AA
+contrast and nothing is smaller than 14px (Lighthouse accessibility 100 on all four pages; see
+BENCHMARKS.md).
 
 ## Dashboard views
 
