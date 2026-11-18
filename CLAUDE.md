@@ -71,8 +71,12 @@ cd web && npm run record-gif     # re-record docs/demo.gif after UI changes (~$0
 - Label time savings and other business impact as estimates unless they are measured.
 - Label numbers in plain English with the industry term in parentheses, using `web/src/health.ts`
   (D-052). New verdict thresholds go there, with a test and an operator-brief entry.
-- Use `text-muted` only on the light/dark surfaces it was checked against (D-049); give every
-  chart card `ready`, `onRetry`, `empty`, `about` and `summary`.
+- Style with the tokens and classes in `web/src/index.css` (D-054): `btn` / `btn-sm` (the only
+  button), `link-line`, `label`, `field`, `display`. No solid buttons, pills, glows, gradients
+  (except the hero overlay) or bright colours; no text under 14px. Check any new text colour
+  against its background at 4.5:1 and note the ratio in `index.css`. On the light `stone`
+  section use the `stone-*` tokens, never `brand`.
+- Give every chart card `ready`, `onRetry`, `empty`, `about` and `summary`.
 - Digest numbers come only from `api/digest/facts.py`. Never let the LLM compute or add numbers;
   if the summary needs a new figure, add it to the facts.
 

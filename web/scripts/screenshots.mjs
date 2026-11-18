@@ -8,7 +8,6 @@ const shots = [
   { name: 'home', path: '/', wait: 'How is the portfolio doing?' },
   { name: 'overview', path: '/dashboard' },
   { name: 'property', path: '/properties/1' },
-  { name: 'overview-dark', path: '/dashboard', dark: true },
   { name: 'digest', path: '/digest', wait: 'Preview (exactly what Slack receives)' },
   // Live agent call (costs a few cents): opens the panel and asks a suggested question.
   { name: 'agent-chart', path: '/dashboard', chat: 'Show occupancy by property as a bar chart.' },
@@ -20,7 +19,6 @@ const browser = await chromium.launch()
 for (const s of shots) {
   const page = await browser.newPage({
     viewport: { width: 1360, height: 900 },
-    colorScheme: s.dark ? 'dark' : 'light',
   })
   await page.goto(BASE + s.path)
   await page.waitForLoadState('networkidle')

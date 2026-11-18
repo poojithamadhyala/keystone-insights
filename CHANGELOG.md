@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- New look across the app: dark charcoal with warm off-white text and one bronze accent, Marcellus
+  headings and figures, Jost body text, thin outline buttons, a transparent navbar over a photo
+  hero, a full-screen menu on phones, and one light section on the welcome page.
+- Chart colours re-validated for the dark surface (bronze, blue, plum). Status is shown as an
+  icon plus a word, not a coloured chip. No text is smaller than 14px.
+- README GIF and screenshots re-recorded.
+
+### Added
+- Five free-licence Unsplash photos (credited in the footer and README); subtle motion that
+  respects the reduced-motion setting.
+
+### Removed
+- The light theme: the app no longer follows the system light/dark setting and is always dark.
+  The separate dark-mode screenshot is gone.
+
 ## [1.1.0] - 2026-11-17
 
 ### Added

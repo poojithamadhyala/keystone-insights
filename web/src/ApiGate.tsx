@@ -50,8 +50,8 @@ export function ApiGate({ children }: { children: ReactNode }) {
   if (info) return <ApiInfoContext.Provider value={info}>{children}</ApiInfoContext.Provider>
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <div className="max-w-md rounded-lg border border-border bg-surface p-6 text-center" role="status" aria-live="polite">
-        <h1 className="text-lg font-semibold">LeaseLens</h1>
+      <div className="max-w-md border-t border-brand pt-8 text-center" role="status" aria-live="polite">
+        <h1 className="display text-2xl tracking-[0.28em] text-ink">LEASELENS</h1>
         {failed ? (
           <p className="mt-2 text-sm text-critical">{failed}</p>
         ) : (
@@ -59,7 +59,7 @@ export function ApiGate({ children }: { children: ReactNode }) {
             <p className="mt-2 text-sm text-ink-2">
               {elapsed < 3 ? 'Connecting…' : 'Waking up the demo API. Free hosting sleeps when idle, so this can take up to a minute.'}
             </p>
-            {elapsed >= 3 && <p className="mt-1 text-xs text-muted tabular">{elapsed}s</p>}
+            {elapsed >= 3 && <p className="label mt-3 text-muted tabular">{elapsed}s</p>}
           </>
         )}
       </div>

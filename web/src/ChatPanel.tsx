@@ -16,7 +16,8 @@ export interface AssistantMsg {
 type Msg = UserMsg | AssistantMsg
 
 const SERIES = ['var(--color-series-1)', 'var(--color-series-2)', 'var(--color-series-3)']
-const AXIS = { stroke: 'var(--color-muted)', fontSize: 11, tickLine: false, axisLine: false } as const
+// No text under 14px (brief); tick labels in muted ink (6.3:1 on the card surface).
+const AXIS = { stroke: 'var(--color-axis)', tick: { fill: 'var(--color-muted)', fontSize: 14 }, tickLine: false, axisLine: false } as const
 /** Captions already show "Source: S1", so inline [S1] markers are dropped there. */
 export const stripCites = (s: string) => s.replace(/\s*\[[SD]\d+\]/g, "")
 const num = (v: number) => (Math.abs(v) >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : String(v))
@@ -47,8 +48,8 @@ export function reduce(msg: AssistantMsg, e: AgentEvent): AssistantMsg {
 function ReportView({ r }: { r: Report }) {
   const fmtTick = (v: unknown) => (typeof v === 'number' ? num(v) : String(v))
   return (
-    <figure className="mt-2 rounded-md border border-border p-2" aria-label={`${r.title}. ${stripCites(r.summary)}`}>
-      <figcaption className="mb-1 text-sm font-medium">{r.title}</figcaption>
+    <figure className="mt-3 border border-line p-4" aria-label={`${r.title}. ${stripCites(r.summary)}`}>
+      <figcaption className="display mb-2 text-xl text-ink">{r.title}</figcaption>
       {r.chart === 'table' ? (
         <DataTable<Record<string, unknown>> rows={r.rows} rowKey={(row) => String(row[r.x])}
                    columns={[r.x, ...r.y].map((c) => ({ key: c, header: c, render: (row) => fmtTick(row[c]) }))} />
@@ -62,7 +63,7 @@ function ReportView({ r }: { r: Report }) {
                 <XAxis dataKey={r.x} {...AXIS} interval="preserveStartEnd" />
                 <YAxis tickFormatter={fmtTick} width={52} {...AXIS} />
                 <Tooltip content={tooltip(num)} cursor={{ fill: 'var(--color-grid)', opacity: 0.5 }} />
-                {r.y.map((c, i) => <Bar key={c} dataKey={c} fill={SERIES[i]} radius={[4, 4, 0, 0]} isAnimationActive={false} />)}
+                {r.y.map((c, i) => <Bar key={c} dataKey={c} fill={SERIES[i]} radius={[2, 2, 0, 0]} isAnimationActive={false} />)}
               </BarChart>
             ) : (
               <LineChart data={r.rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
@@ -76,7 +77,7 @@ function ReportView({ r }: { r: Report }) {
           </ResponsiveContainer>
         </>
       )}
-      <p className="mt-1 text-xs text-ink-2">{stripCites(r.summary)} <span className="text-muted">Source: {r.source}</span></p>
+      <p className="mt-2 text-sm text-ink-2">{stripCites(r.summary)} <span className="text-muted">Source: {r.source}</span></p>
     </figure>
   )
 }
@@ -84,15 +85,15 @@ function ReportView({ r }: { r: Report }) {
 function SqlCard({ s }: { s: SqlResult }) {
   const [showSql, setShowSql] = useState(false)
   return (
-    <div className="rounded-md border border-border p-2 text-xs">
-      <div className="flex items-center justify-between gap-2">
+    <div className="border border-line p-4 text-sm">
+      <div className="flex items-center justify-between gap-3">
         <span><b>{s.id}</b> · {s.purpose} · {s.rows.length}{s.truncated ? '+' : ''} rows</span>
-        <button type="button" className="underline" aria-expanded={showSql} onClick={() => setShowSql((v) => !v)}>
+        <button type="button" className="label shrink-0 text-brand hover:underline" aria-expanded={showSql} onClick={() => setShowSql((v) => !v)}>
           {showSql ? 'Hide SQL' : 'Show SQL'}
         </button>
       </div>
-      {showSql && <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-grid p-2 font-mono">{s.sql}</pre>}
-      <div className="mt-1 max-h-48 overflow-auto">
+      {showSql && <pre className="mt-3 overflow-x-auto whitespace-pre-wrap border-l border-brand bg-page p-3 font-mono text-sm text-ink-2">{s.sql}</pre>}
+      <div className="mt-3 max-h-56 overflow-auto">
         <DataTable<{ i: number; r: unknown[] }> rows={s.rows.slice(0, 10).map((r, i) => ({ i, r }))} rowKey={(x) => x.i}
                    columns={s.columns.map((c, ci) => ({ key: c, header: c, render: (x) => String(x.r[ci] ?? '') }))} />
       </div>
@@ -102,7 +103,7 @@ function SqlCard({ s }: { s: SqlResult }) {
 
 function DocCard({ p }: { p: Passage }) {
   return (
-    <div className="rounded-md border border-border p-2 text-xs">
+    <div className="border border-line p-4 text-sm">
       <div><b>{p.id}</b> · {p.title} › {p.section}</div>
       <p className="mt-1 whitespace-pre-line text-ink-2">{p.text.length > 600 ? `${p.text.slice(0, 600)}…` : p.text}</p>
     </div>
@@ -114,11 +115,11 @@ function AnswerText({ text, onCite }: { text: string; onCite: (id: string) => vo
   const render = (line: string) => splitCitations(line).map((part, i) =>
     part.kind === 'text' ? <span key={i}>{part.value}</span> : (
       <button key={i} type="button" onClick={() => onCite(part.id)}
-              className="mx-0.5 rounded bg-grid px-1 text-[11px] font-semibold text-ink-2 hover:bg-axis"
+              className="mx-0.5 align-baseline text-sm font-medium text-brand underline decoration-dotted underline-offset-2 hover:decoration-solid"
               aria-label={`Show source ${part.id}`}>{part.id}</button>
     ))
   return (
-    <div className="space-y-1.5 text-sm leading-relaxed">
+    <div className="space-y-2 text-base leading-relaxed text-ink">
       {lines.map((l, i) => l.trimStart().startsWith('- ')
         ? <p key={i} className="pl-3 -indent-3">• {render(l.trimStart().slice(2))}</p>
         : <p key={i}>{render(l)}</p>)}
@@ -133,12 +134,12 @@ function AssistantView({ m }: { m: AssistantMsg }) {
   const openSql = m.sql.find((s) => s.id === open)
   const openDoc = m.passages.find((p) => p.id === open)
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {m.notice && (
-        <p className="rounded border border-border bg-grid px-2 py-1 text-xs text-ink-2" role="note">{m.notice}</p>
+        <p className="border-l border-brand pl-3 text-sm text-ink-2" role="note">{m.notice}</p>
       )}
       {m.steps.length > 0 && (
-        <ul className="space-y-0.5 text-xs text-muted">
+        <ul className="space-y-1 text-sm text-muted">
           {m.steps.map((s, i) => <li key={i}>✓ {s.label}</li>)}
         </ul>
       )}
@@ -148,18 +149,18 @@ function AssistantView({ m }: { m: AssistantMsg }) {
       {openSql && <SqlCard s={openSql} />}
       {openDoc && <DocCard p={openDoc} />}
       {m.status !== 'streaming' && sources.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1 text-xs text-muted">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
           Sources:
           {sources.map((s) => (
             <button key={s.id} type="button" onClick={() => setOpen(open === s.id ? null : s.id)}
-                    className={`rounded border border-border px-1.5 ${open === s.id ? 'bg-grid text-ink' : ''}`}>
+                    className={`border-b ${open === s.id ? 'border-brand text-brand' : 'border-line text-ink-2 hover:text-brand'}`}>
               {s.id} {'purpose' in s ? 'query' : s.title.split(':')[0]}
             </button>
           ))}
         </div>
       )}
       {m.error && <p className="text-sm text-critical" role="alert">{m.error}</p>}
-      {m.cost != null && m.cost > 0 && <p className="text-[11px] text-muted">Cost ${m.cost.toFixed(3)}</p>}
+      {m.cost != null && m.cost > 0 && <p className="text-sm text-muted">Cost ${m.cost.toFixed(3)}</p>}
     </div>
   )
 }
@@ -208,46 +209,46 @@ export function ChatPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <aside aria-label="LeaseLens assistant"
-           className="fixed inset-y-0 right-0 z-20 flex w-full flex-col border-l border-border bg-surface shadow-xl sm:w-[440px]">
-      <header className="flex items-center justify-between border-b border-border px-4 py-3">
+           className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-line bg-surface sm:w-[480px]">
+      <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-6">
         <div>
-          <h2 className="font-semibold">Ask LeaseLens</h2>
-          <p className="text-xs text-muted">Answers cite query results [S] and documents [D]</p>
+          <h2 className="text-2xl text-ink">Ask LeaseLens</h2>
+          <p className="mt-1 text-sm text-muted">Answers cite query results [S] and documents [D]</p>
         </div>
-        <div className="flex gap-2">
-          <button type="button" className="rounded border border-border px-2 py-0.5 text-xs"
+        <div className="flex shrink-0 gap-5 pt-1">
+          <button type="button" className="label text-ink-2 hover:text-brand disabled:opacity-40"
                   onClick={() => { setMsgs([]); setConvId(null) }} disabled={busy}>New chat</button>
-          <button type="button" className="rounded border border-border px-2 py-0.5 text-xs" onClick={onClose}
+          <button type="button" className="label text-ink-2 hover:text-brand" onClick={onClose}
                   aria-label="Close assistant">Close</button>
         </div>
       </header>
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3" aria-live="polite">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6" aria-live="polite">
         {msgs.length === 0 && (
-          <div className="space-y-2">
-            <p className="text-sm text-ink-2">Try a question about the portfolio's data or documents:</p>
+          <div className="space-y-3">
+            <p className="label text-brand">Try a question about the data or documents</p>
             {(suggestions.data ?? []).map((s) => (
               <button key={s} type="button" onClick={() => void send(s)}
-                      className="block w-full rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-grid">
+                      className="block w-full border-b border-line py-3 text-left text-base text-ink-2 transition-colors duration-300 hover:text-brand">
                 {s}
               </button>
             ))}
           </div>
         )}
         {msgs.map((m, i) => m.role === 'user'
-          ? <p key={i} className="ml-8 rounded-lg bg-grid px-3 py-2 text-sm">{m.text}</p>
+          ? <p key={i} className="display ml-10 border-r border-brand pr-4 text-right text-lg text-ink">{m.text}</p>
           : <AssistantView key={i} m={m} />)}
         <div ref={endRef} />
       </div>
-      <form onSubmit={onSubmit} className="border-t border-border p-3">
+      <form onSubmit={onSubmit} className="border-t border-line px-6 py-5">
         <label htmlFor="chat-input" className="sr-only">Message</label>
         <textarea id="chat-input" rows={2} value={input} maxLength={1000}
                   onChange={(e) => setInput(e.target.value)} onKeyDown={onKey}
                   placeholder="e.g. Which units at Maple Court owe more than one month's rent?"
-                  className="w-full resize-none rounded-md border border-border bg-surface p-2 text-sm" />
-        <div className="mt-1 flex justify-between text-xs text-muted">
-          <span>Read-only · synthetic data</span>
+                  className="field w-full resize-none" />
+        <div className="mt-4 flex items-center justify-between gap-4 text-sm text-muted">
+          <span>Read only · synthetic data</span>
           <button type="submit" disabled={busy || !input.trim()}
-                  className="rounded bg-ink px-3 py-1 text-sm text-surface disabled:opacity-40">
+                  className="btn btn-sm">
             {busy ? 'Answering…' : 'Send'}
           </button>
         </div>

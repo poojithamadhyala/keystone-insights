@@ -68,7 +68,7 @@ Every number in the written summary must match a SQL fact (rounding or truncatio
 - **Command:** `make bench-a11y`
 - **Date:** 2026-11-17
 - **Tool:** lighthouse@12.2.1, headless Chrome, light mode, desktop viewport
-- **Target:** `https://keystone-insights-nu.vercel.app`
+- **Target:** `http://localhost:5174`
 
 | Page | Score | Failing audits |
 |---|---|---|

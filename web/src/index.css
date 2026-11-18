@@ -1,90 +1,149 @@
 @import "tailwindcss";
 
-/* Design tokens (dataviz reference palette + UI roles). Components use roles, never raw hex, so
-   dark mode is a token swap. Series slots are assigned in fixed order (series-1 first).
-   Every text/background pair below was contrast-checked (WCAG AA 4.5:1; DECISIONS.md D-049, D-052). */
+/* Architectural design system (docs/shaping/architectural-restyle.md, DECISIONS.md D-054).
+   Dark charcoal only. Every text colour below is >= 4.5:1 on the background it is used on
+   (computed, not eyeballed); no text under 14px. Components use roles, never raw hex. */
 @theme {
-  --color-page: #f9f9f7;
-  --color-surface: #fcfcfb;
-  --color-ink: #0b0b0b;
-  --color-ink-2: #52514e;
-  --color-muted: #65635d; /* 5.7:1 on the page; the palette grey #898781 (3.4:1) failed WCAG AA for small text */
-  --color-grid: #e1e0d9;
-  --color-axis: #c3c2b7;
-  --color-border: rgba(11, 11, 11, 0.1);
-  --color-series-1: #2a78d6;
-  --color-series-2: #eb6834;
-  --color-series-3: #1baf7a;
-  --color-good: #006300;
-  --color-critical: #d03b3b;
-  /* brand + welcome-page roles */
-  --color-brand: #1c5cab; /* 6.0-6.5:1 as text on every light surface */
-  --color-brand-fg: #ffffff; /* text on brand: 6.6:1 */
-  --color-hero: #eef4fc;
-  /* status roles: text color on its own tinted background, always with an icon + label */
-  --color-status-good: #006300;
-  --color-status-good-bg: #e8f4e8;
-  --color-status-warn: #7a4f00;
-  --color-status-warn-bg: #fdf3dc;
-  --color-status-crit: #b42828;
-  --color-status-crit-bg: #fbe9e9;
-  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-page: #141413;      /* charcoal: main background ("paper") */
+  --color-surface: #1E1D1B;   /* raised sections and cards */
+  --color-ink: #EDEAE4;       /* warm off-white: 15.4:1 on page, 14.0:1 on surface */
+  --color-ink-2: #D2CDC4;     /* secondary text */
+  --color-muted: #A39E95;     /* 6.9:1 on page, 6.3:1 on surface */
+  --color-line: rgba(237, 234, 228, 0.14);
+  --color-grid: rgba(237, 234, 228, 0.10);
+  --color-axis: rgba(237, 234, 228, 0.22);
+  --color-border: rgba(237, 234, 228, 0.14);
+  --color-brand: #B8A27A;     /* bronze: 7.45:1 on page, 6.8:1 on surface */
+  --color-brand-fg: #141413;  /* text on bronze: 7.45:1 */
+  --color-hero: #1E1D1B;
+  /* The single light section ("stone"). Bronze fails on stone (2.06:1), hence a deeper bronze. */
+  --color-stone: #EDEAE4;
+  --color-stone-ink: #141413;
+  --color-stone-muted: #57534C; /* 6.4:1 on stone */
+  --color-stone-accent: #6E5A39; /* 5.5:1 on stone */
+  /* Chart series: validated with the dataviz validator, all pairs, on both dark surfaces
+     (worst CVD dE 14.7). Plum is 2.6:1 vs surface, so charts keep legends + table views. */
+  --color-series-1: #B58E48;
+  --color-series-2: #507FCD;
+  --color-series-3: #973F6E;
+  /* Status: muted text tones (no bright colours), always with an icon and a word. */
+  --color-status-good: #9CC08B; /* 9.1:1 */
+  --color-status-warn: #D9B46C; /* 9.4:1 */
+  --color-status-crit: #E3998A; /* 8.1:1 */
+  --color-status-good-bg: transparent;
+  --color-status-warn-bg: transparent;
+  --color-status-crit-bg: transparent;
+  --color-good: #9CC08B;
+  --color-critical: #E3998A;
+  --font-sans: "Jost", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Marcellus", Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --color-page: #0d0d0d;
-    --color-surface: #1a1a19;
-    --color-ink: #f0efec;
-    --color-ink-2: #c3c2b7;
-    --color-grid: #2c2c2a;
-    --color-axis: #383835;
-    --color-border: rgba(255, 255, 255, 0.1);
-    --color-series-1: #3987e5;
-    --color-series-2: #d95926;
-    --color-series-3: #199e70;
-    --color-good: #0ca30c;
-    --color-brand: #86b6ef;
-    --color-brand-fg: #0d0d0d;
-    --color-hero: #16202c;
-    --color-status-good: #3fbf3f;
-    --color-status-good-bg: #14261a;
-    --color-status-warn: #e0a100;
-    --color-status-warn-bg: #2b2410;
-    --color-status-crit: #e66767;
-    --color-status-crit-bg: #2d1717;
-  }
-}
-:root[data-theme="dark"] {
+:root {
   color-scheme: dark;
-  --color-page: #0d0d0d;
-  --color-surface: #1a1a19;
-  --color-ink: #f0efec;
-  --color-ink-2: #c3c2b7;
-  --color-grid: #2c2c2a;
-  --color-axis: #383835;
-  --color-border: rgba(255, 255, 255, 0.1);
-  --color-series-1: #3987e5;
-  --color-series-2: #d95926;
-  --color-series-3: #199e70;
-  --color-good: #0ca30c;
-  --color-brand: #86b6ef;
-  --color-brand-fg: #0d0d0d;
-  --color-hero: #16202c;
-  --color-status-good: #3fbf3f;
-  --color-status-good-bg: #14261a;
-  --color-status-warn: #e0a100;
-  --color-status-warn-bg: #2b2410;
-  --color-status-crit: #e66767;
-  --color-status-crit-bg: #2d1717;
+}
+
+html {
+  background: var(--color-page);
 }
 
 body {
   background: var(--color-page);
   color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 18px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+}
+
+strong, b { font-weight: 500; }
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Labels: Jost 500, 14px, uppercase, wide tracking. */
+.label {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* The one button style: thin bronze outline that fills on hover. No solid buttons, no pills. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-brand);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--color-brand);
+  padding: 16px 30px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.2;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+}
+.btn:hover:not(:disabled), .btn:focus-visible { background: var(--color-brand); color: var(--color-brand-fg); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-sm { padding: 8px 14px; letter-spacing: 0.16em; }
+
+/* Text link: a thin line before the text that grows on hover. */
+.link-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.link-line::before {
+  content: "";
+  display: inline-block;
+  width: 32px;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.3s ease;
+}
+.link-line:hover::before, .link-line:focus-visible::before { width: 48px; }
+
+/* Underline-only form fields. */
+.field {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--color-line);
+  border-radius: 0;
+  color: var(--color-ink);
+  font-size: 18px;
+  padding: 10px 0;
+}
+.field:focus { outline: none; border-bottom-color: var(--color-brand); }
+
+:focus-visible { outline: 1px solid var(--color-brand); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

@@ -8,14 +8,18 @@ companies, people or properties.
 the first visit can take up to a minute. AI answers are rate-limited and capped at $2/day; after
 that, the suggested questions show recorded answers.
 
-![Walkthrough: dashboard, property drill-down, AI answer with Show SQL, weekly digest](docs/demo.gif)
+![Walkthrough: welcome page, dashboard, property drill-down, AI answer with Show SQL, weekly summary](docs/demo.gif)
+
+The look is architectural and quiet: charcoal and warm off-white, one bronze accent, a serif for
+headings and figures, thin outline buttons, and one light section. Photos are free-licence
+Unsplash images, credited in the site footer and below.
 
 ## What it does
 
 | | |
 |---|---|
 | **Welcome page** | Says what the app is in one sentence, then shows four live "how is the portfolio doing?" cards in plain English (apartments rented, unpaid rent, leases ending soon, repairs done on time), each with a verdict (Healthy / Keep an eye on / Needs attention) and the rule behind it. |
-| **Reporting dashboard** | Occupancy, NOI, delinquency aging, lease expirations, work-order SLA and rent roll for a 20-property portfolio, with property and date filters, a drill-down, a table view for every chart, and dark mode. Every KPI is defined in plain SQL and tested against a hand-calculated fixture. |
+| **Reporting dashboard** | Occupancy, NOI, delinquency aging, lease expirations, work-order SLA and rent roll for a 20-property portfolio, with property and date filters, a drill-down, and a table view for every chart. Every KPI is defined in plain SQL and tested against a hand-calculated fixture. |
 | **"Ask LeaseLens" agent** | Claude answers ad-hoc questions with three tools: read-only text-to-SQL, document search over leases and SOPs, and charts. Every number cites its source: query results [S#] (with **Show SQL**) or document passages [D#]. |
 | **Weekly digest** | Every Monday: delinquency week over week, leases expiring in 90 days, SLA breaches. The numbers come from SQL and Claude writes the summary. **Code checks every number in the summary against the data**; if one doesn't match, a facts-only version is sent instead. Delivered to Slack. |
 
@@ -148,6 +152,12 @@ Tracked as GitHub issues labeled `later`: email delivery for the digest; a renew
 with a feature store; graph RAG over a Neo4j knowledge graph; drift monitoring and alerting;
 batch embedding at scale. See also [docs/domo.md](docs/domo.md) for how the dashboard would be
 published as a Domo custom app.
+
+## Credits
+
+Photos from [Unsplash](https://unsplash.com) under the Unsplash licence: Roman (@rm_reins; hero
+facade, balconies), Mohammadreza Charkhgard (lit window), Matei C (@moritura23; curtains) and
+Ksenia Obukhova (@fez_wee; house model). Fonts: Marcellus and Jost (Google Fonts, SIL OFL).
 
 ## Repo map
 
