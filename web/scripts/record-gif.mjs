@@ -22,9 +22,10 @@ const pause = (ms) => page.waitForTimeout(ms)
 
 await page.goto(BASE + '/')
 await page.getByText('How is the portfolio doing?').waitFor()
-await page.waitForSelector('.recharts-surface')
-await pause(3500) // welcome page: what it is + health cards
-await page.getByRole('link', { name: 'Open the dashboard' }).click()
+await pause(3500) // welcome page: photo hero settles, headline fades up
+await page.mouse.wheel(0, 1500) // intro + health figures
+await pause(3000)
+await page.getByRole('link', { name: 'Open the dashboard' }).first().click()
 await page.waitForSelector('.recharts-surface')
 await pause(2500) // dashboard: KPI tiles + charts
 await page.getByRole('radio', { name: '6m' }).click()
@@ -37,7 +38,7 @@ await pause(2000)
 await page.mouse.wheel(0, 900)
 await pause(1500)
 await page.mouse.wheel(0, -2000)
-await page.getByRole('button', { name: /^Ask/ }).click()
+await page.getByRole('button', { name: 'Ask LeaseLens' }).click()
 await page.getByRole('button', { name: QUESTION }).click()
 await page.getByText(/Cost \$/).waitFor({ timeout: 120_000 }) // live answer streams in
 await pause(1500)
@@ -45,17 +46,18 @@ await page.getByRole('button', { name: 'Show source S1' }).first().click()
 await page.getByRole('button', { name: 'Show SQL' }).click()
 await pause(3000)
 await page.getByRole('button', { name: 'Close assistant' }).click()
-await page.getByRole('link', { name: /summary/i }).click()
+await page.getByRole('link', { name: /summary/i }).first().click()
 await page.getByText('Preview (exactly what Slack receives)').waitFor()
 await pause(3500)
 await context.close()
 await browser.close()
 
 const video = join(videoDir, readdirSync(videoDir).find((f) => f.endsWith('.webm')))
-// Two-pass palette GIF: 10 fps, 900 px wide. Small enough for a README, sharp enough for text.
-const filters = 'fps=10,scale=900:-1:flags=lanczos'
+// Two-pass palette GIF: 8 fps, 760 px wide, 64 colours. The photo hero needs a diff-based
+// palette to stay under ~5 MB for the README while keeping text readable.
+const filters = 'fps=8,scale=760:-1:flags=lanczos'
 const palette = join(videoDir, 'palette.png')
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-vf', `${filters},palettegen=max_colors=96`, palette])
+execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-vf', `${filters},palettegen=max_colors=64:stats_mode=diff`, palette])
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-i', palette, '-lavfi',
-  `${filters} [x]; [x][1:v] paletteuse=dither=bayer:bayer_scale=4`, OUT])
+  `${filters} [x]; [x][1:v] paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`, OUT])
 console.log(`saved ${OUT} (${(statSync(OUT).size / 1e6).toFixed(1)} MB)`)
