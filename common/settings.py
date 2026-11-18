@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     postgres_ro_user: str = "leaselens_ro"
     database_url_override: str = Field(default="", alias="DATABASE_URL")
 
-    redis_url: str = "redis://localhost:6379/0"
     pinecone_api_key: str = ""
     pinecone_index: str = "leaselens-docs"
     anthropic_api_key: str = ""
