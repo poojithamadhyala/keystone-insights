@@ -6,7 +6,8 @@ import { DataTable, Legend, tooltip } from './components'
 import { money, moneyCompact, monthLabel, pct } from './format'
 
 // Recessive chrome: hairline grid, muted ticks, no axis lines.
-const AXIS = { stroke: 'var(--color-muted)', fontSize: 11, tickLine: false, axisLine: false } as const
+// No text under 14px (brief); tick labels in muted ink (6.3:1 on the card surface).
+const AXIS = { stroke: 'var(--color-axis)', tick: { fill: 'var(--color-muted)', fontSize: 14 }, tickLine: false, axisLine: false } as const
 const GRID = <CartesianGrid stroke="var(--color-grid)" vertical={false} />
 const CURSOR_LINE = { stroke: 'var(--color-axis)', strokeWidth: 1 }
 const CURSOR_BAR = { fill: 'var(--color-grid)', opacity: 0.5 }
@@ -64,7 +65,7 @@ export function NoiByPropertyChart({ rows, onSelect }: {
                 barCategoryGap={2}>
         <CartesianGrid stroke="var(--color-grid)" horizontal={false} />
         <XAxis type="number" tickFormatter={moneyCompact} {...AXIS} />
-        <YAxis type="category" dataKey="property" width={128} {...AXIS} interval={0} />
+        <YAxis type="category" dataKey="property" width={150} {...AXIS} interval={0} />
         <Tooltip cursor={CURSOR_BAR} content={tooltip(money)} />
         <Bar isAnimationActive={false} dataKey="noi" name="NOI" fill={S1} radius={[0, 4, 4, 0]}
              cursor={onSelect ? 'pointer' : undefined}

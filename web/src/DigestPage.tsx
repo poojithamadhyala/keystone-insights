@@ -83,42 +83,43 @@ export function DigestPage() {
 
   const f = run?.facts
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="space-y-12">
+      <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
-          <h1 className="text-xl font-semibold">Weekly summary</h1>
+          <p className="label text-brand">Every Monday, in Slack</p>
+          <h1 className="mt-4 text-[clamp(36px,4vw,64px)] leading-[1.05] text-ink">Weekly summary</h1>
           <p className="text-sm text-muted">
             The short update the team gets in Slack every Monday. Every number comes from the database; the AI only writes the sentences, and a checker withholds them if any number doesn't match.
           </p>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => void build()} disabled={busy !== null}
-                  className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm disabled:opacity-40">
+                  className="link-line disabled:opacity-40">
             {busy === 'build' ? 'Building…' : 'Rebuild preview'}
           </button>
           <button type="button" onClick={() => void send()} disabled={busy !== null || !run || !send_enabled}
                   title={send_enabled ? undefined : 'Sending is disabled on the public demo (preview only)'}
-                  className="rounded-md bg-ink px-3 py-1.5 text-sm text-surface disabled:opacity-40">
+                  className="btn">
             {busy === 'send' ? 'Sending…' : 'Send now'}
           </button>
         </div>
       </div>
       {!send_enabled && (
-        <p className="text-xs text-muted">Public demo: Send now is turned off. The preview is exactly what the weekly Slack post would contain.</p>
+        <p className="text-sm text-muted">Public demo: Send now is turned off. The preview is exactly what the weekly Slack post would contain.</p>
       )}
-      {notice && <p role="status" className="rounded-md border border-border bg-surface px-3 py-2 text-sm">{notice}</p>}
+      {notice && <p role="status" className="border-l border-brand pl-4 text-ink-2">{notice}</p>}
 
       {state === 'loading' && <p className="text-sm text-muted">Loading…</p>}
       {state === 'error' && <p className="text-sm text-critical">Couldn't load the digest. Is the API running?</p>}
       {state === 'empty' && (
-        <p className="rounded-lg border border-border bg-surface p-4 text-sm">
+        <p className="border-t border-line pt-6 text-ink-2">
           No digest has been built yet. Click <b>Rebuild preview</b> to build this week's.
         </p>
       )}
 
       {run && f && (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-3">
             <StatTile label="Unpaid rent" term="Delinquency" value={moneyCompact(f.delinquency.current_residents_this_week)}
                       sub={`${f.delinquency.change <= 0 ? 'down' : 'up'} ${money(Math.abs(f.delinquency.change))} vs last week`} />
             <StatTile label={`Leases ending, next ${f.window_days} days`} term="Lease expirations" value={String(f.expirations.leases)}
@@ -128,22 +129,22 @@ export function DigestPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-5">
-            <section className="rounded-lg border border-border bg-surface p-4 lg:col-span-3" aria-label="Digest preview">
+            <section className="border border-line bg-surface p-6 md:p-8 lg:col-span-3" aria-label="Digest preview">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-medium">Preview (exactly what Slack receives)</h2>
+                <h2 className="text-2xl text-ink">Preview (exactly what Slack receives)</h2>
                 {run.narrative_ok
-                  ? <span className="rounded bg-grid px-2 py-0.5 text-xs text-good">✓ Numbers verified</span>
-                  : <span className="rounded bg-grid px-2 py-0.5 text-xs text-critical">⚠ Facts-only fallback</span>}
+                  ? <span className="label text-good">✓ Numbers verified</span>
+                  : <span className="label text-critical">⚠ Facts-only fallback</span>}
               </div>
-              <div className="space-y-1.5 text-sm leading-relaxed">
+              <div className="space-y-3 text-base leading-relaxed text-ink-2">
                 {run.text.split('\n').map((line, i) => <p key={i}>{mrkdwn(line)}</p>)}
               </div>
               {!run.narrative_ok && run.ungrounded.length > 0 && (
-                <p className="mt-3 text-xs text-ink-2">
+                <p className="mt-4 text-sm text-ink-2">
                   Operator note (not sent): the written summary used numbers not in the data: {run.ungrounded.join(', ')}.
                 </p>
               )}
-              <p className="mt-3 text-xs text-muted">
+              <p className="mt-4 text-sm text-muted">
                 Digest #{run.id} · built {new Date(run.created_at).toLocaleString()} ({run.trigger})
                 {run.cost_usd != null && ` · cost $${run.cost_usd.toFixed(3)}`}
                 {run.delivery_status && ` · ${run.delivery_status}`}

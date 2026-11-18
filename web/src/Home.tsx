@@ -1,13 +1,13 @@
-import { useState, type ReactNode } from 'react'
+import { MotionConfig, motion, useReducedMotion } from 'motion/react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Line, LineChart, ResponsiveContainer, YAxis } from 'recharts'
-import type { AgingRow, ExpirationRow, Meta, Occupancy, Scope, SlaRow } from './api'
+import type { AgingRow, ExpirationRow, Meta, Occupancy, Property, Scope, SlaRow } from './api'
 import { scopeQuery } from './api'
 import { agingByBucket, expirationsByMonth } from './charts'
 import { useChat } from './chat'
 import { StatusBadge } from './components'
-import { money, moneyCompact, monthLabel, pct } from './format'
-import { judge, PLAIN, RULES } from './health'
+import { money, moneyCompact, pct } from './format'
+import { judge, PLAIN, RULES, type Status } from './health'
 import { rangeFor } from './scope'
 import { useApi } from './useApi'
 
@@ -18,61 +18,87 @@ interface DigestFacts {
 }
 
 const REPO = 'https://github.com/poojithamadhyala/keystone-insights'
+const EASE = [0.22, 1, 0.36, 1] as const // slow, confident deceleration
 
-function Icon({ d }: { d: string }) {
+/** Fade up 24px once, when scrolled into view. */
+function Reveal({ children, delay = 0, className }: { children: ReactNode; delay?: number; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8}
-         strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>
+    <motion.div className={className} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }} transition={{ duration: 1, ease: EASE, delay }}>
+      {children}
+    </motion.div>
   )
 }
-const ICONS = {
-  chart: 'M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6',
-  chat: 'M5 5h14v10H9l-4 4V5z',
-  mail: 'M4 6h16v12H4zM4 7l8 6 8-6',
-  check: 'M5 12.5l4.5 4.5L19 7',
+
+/** Counts up once when it first scrolls into view; shows the final value immediately when motion
+ *  is reduced or IntersectionObserver isn't available. */
+function CountUp({ value, format }: { value: number | null; format: (v: number) => string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const reduced = useReducedMotion()
+  const [shown, setShown] = useState<number | null>(null)
+  useEffect(() => {
+    if (value == null) return
+    const el = ref.current
+    if (reduced || typeof IntersectionObserver === 'undefined' || !el) {
+      const id = requestAnimationFrame(() => setShown(value))
+      return () => cancelAnimationFrame(id)
+    }
+    let raf = 0
+    const io = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      io.disconnect()
+      const start = performance.now()
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / 1600)
+        setShown(value * (1 - (1 - t) ** 3))
+        if (t < 1) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }, { threshold: 0.4 })
+    io.observe(el)
+    return () => { io.disconnect(); cancelAnimationFrame(raf) }
+  }, [value, reduced])
+  return <span ref={ref} className="tabular">{value == null ? '…' : format(shown ?? 0)}</span>
 }
 
-function HealthCard({ title, term, value, detail, help, status, rule, loading }: {
-  title: string; term: string; value: string; detail?: ReactNode; help: string
-  status?: ReturnType<typeof judge>; rule?: string; loading: boolean
+function Figure({ title, term, value, format, detail, help, status, rule }: {
+  title: string; term: string; value: number | null; format: (v: number) => string
+  detail?: ReactNode; help: string; status?: Status | null; rule?: string
 }) {
   return (
-    <div role="group" aria-label={title}
-         className="flex flex-col rounded-xl border border-border bg-surface p-4 shadow-sm">
-      <h3 className="text-sm text-ink-2">{title} <span className="text-muted">({term})</span></h3>
-      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <p className={`text-3xl font-semibold tabular ${loading ? 'text-muted' : 'text-ink'}`}>{loading ? '…' : value}</p>
-        {status && !loading && <span className="whitespace-nowrap"><StatusBadge status={status} title={rule} /></span>}
-      </div>
-      {detail && <p className="mt-0.5 text-sm text-ink-2">{detail}</p>}
-      <p className="mt-3 border-t border-border pt-2 text-xs leading-snug text-ink-2">{help}</p>
+    <div role="group" aria-label={title} className="border-t border-brand pt-6">
+      {/* two lines reserved so the four figures share one baseline even when a label wraps */}
+      <h3 className="min-h-12 font-sans text-base font-normal text-ink-2">{title} <span className="text-muted">({term})</span></h3>
+      <p className="display mt-3 text-[56px] leading-none text-ink"><CountUp value={value} format={format} /></p>
+      {detail && <p className="mt-3 text-base text-ink-2">{detail}</p>}
+      {status && <p className="mt-3"><StatusBadge status={status} title={rule} /></p>}
+      <p className="mt-4 text-sm leading-relaxed text-muted">{help}</p>
     </div>
   )
 }
 
-/** Live mini-chart for the hero: apartments rented over the last 12 months (same data as the
- *  dashboard's occupancy chart), so the first thing a visitor sees is real and moving. */
-function TrendCard({ trend }: { trend: Occupancy['trend'] }) {
-  const pts = trend.filter((t) => t.occupancy != null)
-  const first = pts[0]
-  const last = pts[pts.length - 1]
+/** One full-width row: image on one side (alternating), words on the other. The image reveals
+ *  with a bottom-to-top clip; the text fades in after it. */
+function Row({ image, alt, flip, label, name, place, children, facts, action }: {
+  image: string; alt: string; flip?: boolean; label: string; name: string; place: string
+  children: ReactNode; facts: string; action: ReactNode
+}) {
   return (
-    <div className="hidden rounded-xl border border-border bg-surface p-4 shadow-sm md:block">
-      <p className="text-sm text-ink-2">Apartments rented, last 12 months</p>
-      <p className="mt-1 text-3xl font-semibold tabular text-ink">{last ? pct(last.occupancy) : '…'}</p>
-      <div role="img" className="mt-2 h-24"
-           aria-label={first && last ? `Apartments rented went from ${pct(first.occupancy)} in ${monthLabel(first.month)} to ${pct(last.occupancy)} in ${monthLabel(last.month)}` : 'Loading trend'}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={pts} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-            <YAxis hide domain={['dataMin - 0.005', 'dataMax + 0.005']} />
-            <Line dataKey="occupancy" stroke="var(--color-brand)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-      <p className="mt-1 text-xs text-ink-2">
-        {first && last ? `${monthLabel(first.month, true)} → ${monthLabel(last.month, true)} · live from the demo database` : ' '}
-      </p>
-    </div>
+    <article className="grid items-center gap-10 md:grid-cols-2 md:gap-20">
+      <motion.div className={`aspect-[4/5] overflow-hidden ${flip ? 'md:order-2' : ''}`}
+                  initial={{ clipPath: 'inset(100% 0 0 0)' }} whileInView={{ clipPath: 'inset(0% 0 0 0)' }}
+                  viewport={{ once: true, margin: '-100px' }} transition={{ duration: 1.1, ease: EASE }}>
+        <img src={image} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+      </motion.div>
+      <Reveal delay={0.5} className={flip ? 'md:order-1' : ''}>
+        <p className="label text-brand">{label}</p>
+        <h3 className="mt-5 text-[clamp(32px,3.4vw,52px)] leading-[1.08] text-ink">{name}</h3>
+        <p className="label mt-3 text-muted">{place}</p>
+        <div className="mt-6 max-w-md text-ink-2">{children}</div>
+        <p className="mt-6 border-t border-line pt-4 text-sm text-muted">{facts}</p>
+        <div className="mt-8">{action}</div>
+      </Reveal>
+    </article>
   )
 }
 
@@ -87,139 +113,216 @@ export function Home() {
   const aging = useApi<AgingRow[]>(q('/kpis/delinquency'))
   const exp = useApi<ExpirationRow[]>(q('/kpis/lease-expirations', { months: 12 }))
   const sla = useApi<SlaRow[]>(q('/kpis/work-order-sla', { group_by: 'priority' }))
+  const properties = useApi<Property[]>('/kpis/properties')
   const digest = useApi<{ facts: DigestFacts }>('/digest/latest') // optional: weekly change
 
   const rows = occ.data?.by_property ?? []
   const units = rows.reduce((s, r) => s + r.units, 0)
   const occupied = rows.reduce((s, r) => s + r.occupied, 0)
-  const occRate = units ? occupied / units : null
-  const owed = agingByBucket(aging.data ?? []).reduce((s, r) => s + r.current, 0)
+  const occRate = occ.data ? (units ? occupied / units : null) : null
+  const owed = aging.data ? agingByBucket(aging.data).reduce((s, r) => s + r.current, 0) : null
   const next3 = expirationsByMonth(exp.data ?? []).slice(0, 3)
-  const ending = next3.reduce((s, r) => s + r.leases, 0)
+  const ending = exp.data ? next3.reduce((s, r) => s + r.leases, 0) : null
   const atStake = next3.reduce((s, r) => s + r.monthly_rent, 0)
   const met = (sla.data ?? []).reduce((s, r) => s + r.met, 0)
   const judged = (sla.data ?? []).reduce((s, r) => s + r.judged, 0)
-  const onTime = judged ? met / judged : null
+  const onTime = sla.data ? (judged ? met / judged : null) : null
   const facts = digest.data?.facts.as_of === meta.data?.as_of ? digest.data?.facts : undefined
+  const city = new Map((properties.data ?? []).map((p) => [p.id, `${p.city}, ${p.state}`]))
+  const largest = [...rows].sort((a, b) => b.units - a.units).slice(0, 5)
 
   if (meta.error) {
     return (
-      <div role="alert" className="space-y-2 p-6">
+      <div role="alert" className="mx-auto max-w-[1320px] space-y-4 px-5 pt-[140px] md:px-10">
         <p className="text-critical">Couldn't reach the API: {meta.error}</p>
-        <button type="button" onClick={meta.reload} className="rounded border border-border px-3 py-1 text-sm">Retry</button>
+        <button type="button" onClick={meta.reload} className="btn btn-sm">Retry</button>
       </div>
     )
   }
 
   return (
-    <div className="space-y-10">
-      <section className="grid items-center gap-8 rounded-2xl bg-hero px-6 py-10 sm:px-10 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div>
-        <p className="text-sm font-medium text-brand">Property-management reporting, with an AI analyst</p>
-        <h1 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Your apartment portfolio, explained.
-        </h1>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-2">
-          LeaseLens turns a property company's everyday data into plain answers: how full the
-          buildings are, who is behind on rent, which leases end soon and whether repairs happen on
-          time. You can ask it questions in plain English, and every answer shows where its numbers
-          came from.
-        </p>
-        <p className="mt-3 text-sm text-ink-2">
-          {rows.length || 20} buildings · {units ? units.toLocaleString() : '3,000'} apartments ·
-          data as of {meta.data?.as_of ?? '…'} · <strong className="font-medium">all data is made up for this demo</strong>
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/dashboard" className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-fg shadow-sm hover:opacity-90">
-            Open the dashboard
-          </Link>
-          <button type="button" onClick={openChat}
-                  className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-grid">
-            Ask a question
-          </button>
+    <MotionConfig reducedMotion="user">
+      {/* Hero: full-bleed photo, the only gradient on the site, text block bottom left. */}
+      <section className="relative flex min-h-[clamp(620px,88vh,940px)] items-end overflow-hidden">
+        <motion.img src="/images/hero-facade-dusk.jpg" alt="" aria-hidden
+                    className="absolute inset-0 h-full w-full object-cover"
+                    initial={{ scale: 1.06 }} animate={{ scale: 1 }} transition={{ duration: 2.4, ease: EASE }} />
+        {/* The site's only gradient. Desktop: charcoal from bottom left fading to the top right.
+            Narrow screens: the text spans the full width, so the overlay rises from the bottom
+            instead and the copy never sits on the bright fins. */}
+        <div aria-hidden className="absolute inset-0 hidden md:block"
+             style={{ background: 'linear-gradient(to top right, rgba(20,20,19,0.94) 0%, rgba(20,20,19,0.86) 42%, rgba(20,20,19,0.22) 74%, rgba(20,20,19,0) 100%)' }} />
+        <div aria-hidden className="absolute inset-0 md:hidden"
+             style={{ background: 'linear-gradient(to top, rgba(20,20,19,0.96) 0%, rgba(20,20,19,0.86) 55%, rgba(20,20,19,0.45) 100%)' }} />
+        <div className="relative mx-auto w-full max-w-[1320px] px-5 pb-16 md:px-10 md:pb-24">
+          <motion.div className="max-w-3xl" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 1.2, ease: EASE, delay: 0.3 }}>
+            <p className="label text-brand">Apartment portfolio reporting, with an AI analyst</p>
+            <h1 className="mt-6 text-[clamp(40px,5.6vw,92px)] leading-[1.04] text-ink">
+              Your apartment portfolio, explained.
+            </h1>
+            <p className="mt-6 max-w-xl text-ink-2">
+              Plain answers about how full the buildings are, who is behind on rent and whether
+              repairs happen on time. Every number shows where it came from.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center gap-8">
+              <Link to="/dashboard" className="btn">Open the dashboard</Link>
+              <button type="button" onClick={openChat} className="link-line">Ask a question</button>
+            </div>
+          </motion.div>
         </div>
-        </div>
-        <TrendCard trend={occ.data?.trend ?? []} />
       </section>
 
-      <section aria-labelledby="health-h">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 id="health-h" className="text-xl font-semibold">How is the portfolio doing?</h2>
-            <p className="text-sm text-ink-2">The four numbers a property manager checks first, as of {meta.data?.as_of ?? '…'}.</p>
+      <div className="mx-auto max-w-[1320px] px-5 md:px-10">
+        {/* Intro */}
+        <section className="py-[clamp(88px,10vw,140px)] text-center">
+          <Reveal>
+            <p className="display mx-auto max-w-4xl text-[clamp(24px,2.6vw,34px)] leading-[1.45] text-ink">
+              LeaseLens turns a property company's everyday data into plain answers, and lets anyone
+              ask it questions in ordinary English.
+            </p>
+            <p className="mx-auto mt-8 max-w-2xl text-muted">
+              {rows.length || 20} buildings · {units ? units.toLocaleString() : '3,000'} apartments ·
+              data as of {meta.data?.as_of ?? '…'} · <span className="text-ink-2">all data is made up for this demo</span>
+            </p>
+          </Reveal>
+        </section>
+
+        {/* Numbers */}
+        <section aria-labelledby="health-h" className="pb-[clamp(88px,10vw,140px)]">
+          <Reveal className="flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <p className="label text-brand">As of {meta.data?.as_of ?? '…'}</p>
+              <h2 id="health-h" className="mt-4 text-[clamp(32px,3.4vw,52px)] leading-[1.08] text-ink">How is the portfolio doing?</h2>
+            </div>
+            <button type="button" onClick={() => setShowRules((v) => !v)} aria-expanded={showRules} className="link-line">
+              How we judge "healthy"
+            </button>
+          </Reveal>
+          {showRules && (
+            <ul className="mt-8 max-w-3xl space-y-3 border-l border-brand pl-5 text-ink-2">
+              <li><span className="text-ink">Apartments rented.</span> {RULES.occupancy.explain}</li>
+              <li><span className="text-ink">Repairs done on time.</span> {RULES.repairsOnTime.explain}</li>
+              <li>Unpaid rent and leases ending soon show their size and trend instead of a verdict, because a fair threshold depends on the size of the portfolio.</li>
+            </ul>
+          )}
+          <div className="mt-14 grid gap-x-12 gap-y-14 sm:grid-cols-2 lg:grid-cols-4">
+            <Figure title={PLAIN.occupancy.label} term={PLAIN.occupancy.term} value={occRate}
+                    format={(v) => pct(v)} help={PLAIN.occupancy.help}
+                    detail={`${occupied.toLocaleString()} of ${units.toLocaleString()} apartments`}
+                    status={judge(occRate, RULES.occupancy)} rule={RULES.occupancy.explain} />
+            <Figure title={PLAIN.delinquent.label} term={PLAIN.delinquent.term} value={owed}
+                    format={moneyCompact} help={PLAIN.delinquent.help}
+                    detail={facts ? `${facts.delinquency.change <= 0 ? '↓ down' : '↑ up'} ${money(Math.abs(facts.delinquency.change))} from last week` : 'owed by current tenants'} />
+            <Figure title={PLAIN.expiring.label} term={PLAIN.expiring.term} value={ending}
+                    format={(v) => Math.round(v).toLocaleString()} help={PLAIN.expiring.help}
+                    detail={`${moneyCompact(atStake)} of monthly rent up for renewal`} />
+            <Figure title={PLAIN.repairs.label} term={PLAIN.repairs.term} value={onTime}
+                    format={(v) => pct(v)} help={PLAIN.repairs.help}
+                    detail={facts ? `${facts.sla.open_breaches} repairs overdue right now` : `${met.toLocaleString()} of ${judged.toLocaleString()} on time`}
+                    status={judge(onTime, RULES.repairsOnTime)} rule={RULES.repairsOnTime.explain} />
           </div>
-          <button type="button" onClick={() => setShowRules((v) => !v)} aria-expanded={showRules}
-                  className="text-sm text-brand underline underline-offset-2">
-            How we judge "healthy"
-          </button>
-        </div>
-        {showRules && (
-          <ul className="mt-3 space-y-1 rounded-lg border border-border bg-surface p-3 text-sm text-ink-2">
-            <li><b>Apartments rented:</b> {RULES.occupancy.explain}</li>
-            <li><b>Repairs done on time:</b> {RULES.repairsOnTime.explain}</li>
-            <li>Unpaid rent and leases ending soon show their size and trend instead of a verdict, because a fair threshold depends on the size of the portfolio.</li>
-          </ul>
-        )}
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <HealthCard title={PLAIN.occupancy.label} term={PLAIN.occupancy.term} loading={!occ.data}
-                      value={pct(occRate)} help={PLAIN.occupancy.help}
-                      detail={`${occupied.toLocaleString()} of ${units.toLocaleString()} apartments`}
-                      status={judge(occRate, RULES.occupancy)} rule={RULES.occupancy.explain} />
-          <HealthCard title={PLAIN.delinquent.label} term={PLAIN.delinquent.term} loading={!aging.data}
-                      value={moneyCompact(owed)} help={PLAIN.delinquent.help}
-                      detail={facts ? `${facts.delinquency.change <= 0 ? '↓ down' : '↑ up'} ${money(Math.abs(facts.delinquency.change))} from last week` : 'owed by current tenants'} />
-          <HealthCard title={PLAIN.expiring.label} term={PLAIN.expiring.term} loading={!exp.data}
-                      value={ending.toLocaleString()} help={PLAIN.expiring.help}
-                      detail={`${moneyCompact(atStake)} of monthly rent up for renewal`} />
-          <HealthCard title={PLAIN.repairs.label} term={PLAIN.repairs.term} loading={!sla.data}
-                      value={pct(onTime)} help={PLAIN.repairs.help}
-                      detail={facts ? `${facts.sla.open_breaches} repairs overdue right now` : `${met.toLocaleString()} of ${judged.toLocaleString()} on time`}
-                      status={judge(onTime, RULES.repairsOnTime)} rule={RULES.repairsOnTime.explain} />
+        </section>
+
+        {/* What you can do here: alternating image rows */}
+        <section aria-labelledby="do-h" className="pb-[clamp(88px,10vw,140px)]">
+          <Reveal><h2 id="do-h" className="text-[clamp(32px,3.4vw,52px)] leading-[1.08] text-ink">What you can do here</h2></Reveal>
+          <div className="mt-16 space-y-[clamp(72px,9vw,128px)]">
+            <Row image="/images/balconies.jpg" alt="Curved white balconies repeating up an apartment building"
+                 label="Dashboard" name="See the numbers" place="The whole portfolio, or one building"
+                 facts="Five headline figures · six charts · every chart also as a table"
+                 action={<Link to="/dashboard" className="link-line">Open the dashboard</Link>}>
+              Rent collected, profit, unpaid rent, leases ending and repairs, for all twenty buildings
+              or any one of them. Each number says what it means in everyday words.
+            </Row>
+            <Row image="/images/lit-window.jpg" alt="A single warm lit window in a dark apartment building at night" flip
+                 label="Ask LeaseLens" name="Ask a question" place="In plain English"
+                 facts="Reads the data and the documents · shows its sources · can never change anything"
+                 action={<button type="button" onClick={openChat} className="link-line">Ask a question</button>}>
+              Type a question like "Which buildings have the most unpaid rent?" The AI looks it up
+              and links every figure to the exact data or document it came from.
+            </Row>
+            <Row image="/images/curtains.jpg" alt="Morning light through sheer curtains in a dark room"
+                 label="Every Monday" name="Read the weekly summary" place="Sent to the team in Slack"
+                 facts="Unpaid rent this week · leases ending soon · overdue repairs"
+                 action={<Link to="/digest" className="link-line">Read this week's summary</Link>}>
+              A short update on what changed and what needs attention. The AI writes the sentences;
+              a checker compares every number with the real data before anything is sent.
+            </Row>
+          </div>
+        </section>
+      </div>
+
+      {/* The one light section */}
+      <section aria-labelledby="honest-h" className="bg-stone text-stone-ink">
+        <div className="mx-auto grid max-w-[1320px] items-center gap-12 px-5 py-[clamp(88px,10vw,140px)] md:grid-cols-[5fr_6fr] md:gap-24 md:px-10">
+          <motion.div className="aspect-[3/4] overflow-hidden"
+                      initial={{ clipPath: 'inset(100% 0 0 0)' }} whileInView={{ clipPath: 'inset(0% 0 0 0)' }}
+                      viewport={{ once: true, margin: '-100px' }} transition={{ duration: 1.1, ease: EASE }}>
+            <img src="/images/house-model.jpg" alt="An architect's pale wooden model of a row of houses" loading="lazy"
+                 className="h-full w-full object-cover object-[30%_50%]" />
+          </motion.div>
+          <Reveal delay={0.4}>
+            <p className="label text-stone-accent">Our approach</p>
+            <h2 id="honest-h" className="mt-5 text-[clamp(36px,4vw,64px)] leading-[1.06]">How the AI is kept honest</h2>
+            <ol className="mt-12 space-y-10">
+              {[
+                ['I.', 'Every number shows its source.', 'Answers link each figure to the exact data or document it came from, and you can open the database query behind it.'],
+                ['II.', 'It can only read, never change.', 'The AI has read only access to a limited set of data, enforced by the database itself, and it never sees tenants’ contact details.'],
+                ['III.', 'Numbers are checked before sending.', 'Before the weekly summary goes out, a program compares every number the AI wrote with the real data. One mismatch and the AI’s text is withheld.'],
+              ].map(([n, title, body]) => (
+                <li key={n} className="grid grid-cols-[3.25rem_1fr] gap-4">
+                  <span className="display text-2xl text-stone-accent">{n}</span>
+                  <span>
+                    <span className="display block text-2xl">{title}</span>
+                    <span className="mt-2 block text-stone-muted">{body}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </Reveal>
         </div>
       </section>
 
-      <section aria-labelledby="do-h">
-        <h2 id="do-h" className="text-xl font-semibold">What you can do here</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <Link to="/dashboard" className="group rounded-xl border border-border bg-surface p-5 shadow-sm hover:border-brand">
-            <span className="block text-brand"><Icon d={ICONS.chart} /></span>
-            <span className="mt-3 block font-semibold text-ink group-hover:text-brand">See the numbers →</span>
-            <span className="mt-1 block text-sm text-ink-2">Charts for the whole portfolio or one building: rent, profit, unpaid rent, leases and repairs. Every chart can be shown as a table.</span>
-          </Link>
-          <button type="button" onClick={openChat}
-                  className="group rounded-xl border border-border bg-surface p-5 text-left shadow-sm hover:border-brand">
-            <span className="block text-brand"><Icon d={ICONS.chat} /></span>
-            <span className="mt-3 block font-semibold text-ink group-hover:text-brand">Ask a question →</span>
-            <span className="mt-1 block text-sm text-ink-2">Type a question like "Which buildings have the most unpaid rent?" The AI looks it up and shows its sources.</span>
-          </button>
-          <Link to="/digest" className="group rounded-xl border border-border bg-surface p-5 shadow-sm hover:border-brand">
-            <span className="block text-brand"><Icon d={ICONS.mail} /></span>
-            <span className="mt-3 block font-semibold text-ink group-hover:text-brand">Read the weekly summary →</span>
-            <span className="mt-1 block text-sm text-ink-2">The short Monday update the team gets in Slack: what changed this week and what needs attention.</span>
-          </Link>
-        </div>
-      </section>
-
-      <section aria-labelledby="honest-h" className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
-        <h2 id="honest-h" className="text-xl font-semibold">How the AI is kept honest</h2>
-        <ul className="mt-4 grid gap-4 md:grid-cols-3">
-          {[
-            ['Every number shows its source', 'Answers link each figure to the exact data or document it came from, and you can open the database query behind it.'],
-            ['It can only read, never change', 'The AI has read-only access to a limited set of data, enforced by the database itself, and it never sees tenants’ contact details.'],
-            ['Numbers are checked before sending', 'Before the weekly summary goes out, a program compares every number the AI wrote with the real data. One mismatch and the AI’s text is withheld.'],
-          ].map(([title, body]) => (
-            <li key={title} className="flex gap-3">
-              <span className="mt-0.5 shrink-0 text-status-good"><Icon d={ICONS.check} /></span>
-              <span><span className="block font-medium text-ink">{title}</span><span className="text-sm text-ink-2">{body}</span></span>
+      {/* The largest buildings, as a quiet list */}
+      <section aria-labelledby="buildings-h" className="mx-auto max-w-[1320px] px-5 py-[clamp(88px,10vw,140px)] md:px-10">
+        <Reveal className="flex flex-wrap items-end justify-between gap-6">
+          <h2 id="buildings-h" className="text-[clamp(32px,3.4vw,52px)] leading-[1.08] text-ink">The largest buildings</h2>
+          <Link to="/dashboard" className="link-line">See all {rows.length || 20} buildings</Link>
+        </Reveal>
+        <ul className="mt-12 border-t border-line">
+          {largest.map((r) => (
+            <li key={r.property_id} className="border-b border-line">
+              <Link to={`/properties/${r.property_id}`}
+                    className="group grid grid-cols-[1fr_auto] items-baseline gap-4 py-6 md:grid-cols-[2fr_2fr_1fr_1fr]">
+                <span className="display text-2xl text-ink transition-colors duration-300 group-hover:text-brand md:text-3xl">{r.property}</span>
+                <span className="hidden text-muted md:block">{city.get(r.property_id) ?? ''}</span>
+                <span className="hidden text-ink-2 md:block">{r.units} apartments</span>
+                <span className="text-right text-ink-2">{pct(r.occupancy)} rented</span>
+              </Link>
             </li>
           ))}
         </ul>
       </section>
 
-      <footer className="border-t border-border pt-4 text-sm text-ink-2">
-        A portfolio project · synthetic data, no real people or companies ·{' '}
-        <a href={REPO} className="text-brand underline underline-offset-2">source on GitHub</a>
+      <footer className="border-t border-line">
+        <div className="mx-auto grid max-w-[1320px] gap-10 px-5 py-16 md:grid-cols-[2fr_1fr_1fr] md:px-10">
+          <div>
+            <span className="display text-xl tracking-[0.28em] text-ink">LEASELENS</span>
+            <p className="mt-4 max-w-sm text-sm text-muted">
+              A portfolio project. Synthetic data: no real people, companies or properties.
+            </p>
+          </div>
+          <nav aria-label="Footer" className="flex flex-col gap-3 text-sm">
+            <Link to="/dashboard" className="text-ink-2 hover:text-brand">Dashboard</Link>
+            <Link to="/digest" className="text-ink-2 hover:text-brand">Weekly summary</Link>
+            <a href={REPO} className="text-ink-2 hover:text-brand">Source on GitHub</a>
+          </nav>
+          <p className="text-sm text-muted">
+            Photography from Unsplash by Roman, Mohammadreza Charkhgard, Matei C and Ksenia Obukhova.
+          </p>
+        </div>
       </footer>
-    </div>
+    </MotionConfig>
   )
 }

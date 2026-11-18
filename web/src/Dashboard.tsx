@@ -21,35 +21,34 @@ function FilterBar({ filters, properties, onChange, lockProperty }: {
   lockProperty?: boolean
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3" role="group" aria-label="Filters">
-      <div className="inline-flex rounded-md border border-border bg-surface p-0.5" role="radiogroup"
-           aria-label="Date range">
+    <div className="flex flex-wrap items-center gap-x-10 gap-y-4" role="group" aria-label="Filters">
+      <div className="flex items-center gap-5" role="radiogroup" aria-label="Date range">
         {RANGE_PRESETS.map((m) => (
           <button key={m} type="button" role="radio" aria-checked={filters.months === m}
                   onClick={() => onChange({ ...filters, months: m })}
-                  className={`rounded px-2.5 py-1 text-sm ${filters.months === m
-                    ? 'bg-ink text-surface' : 'text-ink-2 hover:bg-grid'}`}>
+                  className={`label border-b py-1 transition-colors duration-300 ${filters.months === m
+                    ? 'border-brand text-brand' : 'border-transparent text-ink-2 hover:text-brand'}`}>
             {m}m
           </button>
         ))}
       </div>
       {!lockProperty && (
         <details className="relative">
-          <summary className="flex h-8 cursor-pointer list-none items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm text-ink">
+          <summary className="label flex cursor-pointer list-none items-center gap-3 border-b border-line py-1 text-ink hover:text-brand">
             {filters.propertyIds.length === 0
               ? 'All properties'
               : `${filters.propertyIds.length} propert${filters.propertyIds.length === 1 ? 'y' : 'ies'}`}
             <span aria-hidden className="text-muted">▾</span>
           </summary>
-          <fieldset className="absolute right-0 z-10 mt-1 max-h-80 w-60 overflow-y-auto rounded-md border border-border bg-surface p-2 shadow-md">
+          <fieldset className="absolute right-0 z-10 mt-2 max-h-80 w-64 overflow-y-auto border border-line bg-page p-3">
             <legend className="sr-only">Properties</legend>
-            <button type="button" className="mb-1 w-full rounded px-2 py-1 text-left text-sm text-ink-2 hover:bg-grid"
+            <button type="button" className="mb-2 w-full py-1 text-left text-sm text-brand hover:underline"
                     onClick={() => onChange({ ...filters, propertyIds: [] })}>
               All properties
             </button>
             {properties.map((p) => (
-              <label key={p.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-grid">
-                <input type="checkbox" checked={filters.propertyIds.includes(p.id)}
+              <label key={p.id} className="flex items-center gap-3 py-1 text-sm text-ink-2 hover:text-ink">
+                <input type="checkbox" className="accent-brand" checked={filters.propertyIds.includes(p.id)}
                        onChange={(e) => onChange({
                          ...filters,
                          propertyIds: e.target.checked
@@ -102,7 +101,7 @@ export function Dashboard() {
   const slaJudged = (sla.data ?? []).reduce((s, r) => s + r.judged, 0)
   const noiProps = noiByProperty(noi.data ?? [])
   const noiMonths = noiByMonth(noi.data ?? [])
-  const rangeLabel = scope ? `${monthLabel(scope.start)} – ${monthLabel(scope.end)}` : ''
+  const rangeLabel = scope ? `${monthLabel(scope.start)} to ${monthLabel(scope.end)}` : ''
 
   // One-sentence screen-reader summaries of what each chart shows.
   const trend = (occ.data?.trend ?? []).filter((t) => t.occupancy != null)
@@ -126,23 +125,23 @@ export function Dashboard() {
     return (
       <div role="alert" className="space-y-2 p-6">
         <p className="text-critical">Couldn't reach the API: {meta.error}</p>
-        <button type="button" onClick={meta.reload} className="rounded border border-border px-3 py-1 text-sm">Retry</button>
+        <button type="button" onClick={meta.reload} className="btn btn-sm">Retry</button>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="space-y-12">
+      <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
           {lockedId && (
-            <Link to={`/dashboard?${keep}`} className="text-sm text-brand underline underline-offset-2">← All buildings</Link>
+            <Link to={`/dashboard?${keep}`} className="link-line text-brand">All buildings</Link>
           )}
-          <h1 className="text-xl font-semibold">
+          <h1 className="mt-4 text-[clamp(36px,4vw,64px)] leading-[1.05] text-ink">
             {lockedId ? property?.name ?? 'Building' : 'Portfolio dashboard'}
           </h1>
-          <p className="text-sm text-muted">
-            {property ? `${property.city}, ${property.state} · ${property.units} units · ` : ''}
+          <p className="mt-3 text-muted">
+            {property ? `${property.city}, ${property.state} · ${property.units} apartments · ` : ''}
             As of {meta.data?.as_of ?? '…'} · {rangeLabel}
           </p>
         </div>
@@ -150,9 +149,9 @@ export function Dashboard() {
                    lockProperty={!!lockedId} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile label={PLAIN.occupancy.label} term={PLAIN.occupancy.term} help={PLAIN.occupancy.help}
-                  value={units ? pct(occupied / units) : '—'}
+                  value={units ? pct(occupied / units) : 'n/a'}
                   sub={`${occupied.toLocaleString()} of ${units.toLocaleString()} apartments`}
                   status={judge(units ? occupied / units : null, RULES.occupancy)} statusRule={RULES.occupancy.explain} />
         <StatTile label={PLAIN.noi.label} term={PLAIN.noi.term} help={PLAIN.noi.help}
@@ -162,12 +161,12 @@ export function Dashboard() {
         <StatTile label={PLAIN.expiring.label} term={PLAIN.expiring.term} help={PLAIN.expiring.help}
                   value={String(next90)} sub="in the next 3 months" />
         <StatTile label={PLAIN.repairs.label} term={PLAIN.repairs.term} help={PLAIN.repairs.help}
-                  value={slaJudged ? pct(slaMet / slaJudged) : '—'}
+                  value={slaJudged ? pct(slaMet / slaJudged) : 'n/a'}
                   sub={`${slaMet.toLocaleString()} of ${slaJudged.toLocaleString()} on time`}
                   status={judge(slaJudged ? slaMet / slaJudged : null, RULES.repairsOnTime)} statusRule={RULES.repairsOnTime.explain} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <ChartCard title="Apartments rented over time" subtitle="Share of apartments with a tenant on the 1st of each month"
                    loading={occ.loading} ready={!!occ.data} error={occ.error} onRetry={occ.reload}
                    about={CHART_NOTES.occupancy} summary={occSummary}
@@ -249,7 +248,7 @@ function SlaTable({ rows }: { rows: SlaRow[] }) {
       { key: 'g', header: 'Group', render: (r) => r.grp + (SLA_TARGET[r.grp] ? ` (${SLA_TARGET[r.grp]})` : '') },
       { key: 't', header: 'Tickets', align: 'right', render: (r) => r.tickets.toLocaleString() },
       { key: 's', header: 'On time', align: 'right', render: (r) => pct(r.sla_rate) },
-      { key: 'm', header: 'Median hours', align: 'right', render: (r) => r.median_hours ?? '—' },
+      { key: 'm', header: 'Median hours', align: 'right', render: (r) => r.median_hours ?? 'n/a' },
     ]} />
   )
 }
@@ -264,7 +263,7 @@ function PropertyExtras({ scope }: { scope: Scope | null }) {
   const byCat = useApi<SlaRow[]>(scope ? `/kpis/work-order-sla?${scopeQuery(scope, { group_by: 'category' })}` : null)
   const total = roll.data?.total ?? 0
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid gap-6 lg:grid-cols-3">
       <ChartCard title="Work-order SLA by category" loading={byCat.loading} ready={!!byCat.data}
                  error={byCat.error} onRetry={byCat.reload} about={CHART_NOTES.sla}
                  empty={byCat.data && byCat.data.length === 0 && 'No work orders opened in this range.'}
@@ -277,19 +276,19 @@ function PropertyExtras({ scope }: { scope: Scope | null }) {
             <DataTable rows={roll.data?.rows ?? []} rowKey={(r) => r.unit_id} columns={[
               { key: 'u', header: 'Unit', render: (r) => `${r.unit_number} · ${r.unit_type}` },
               { key: 't', header: 'Tenant', render: (r) => r.tenant ?? <span className="text-muted">Vacant</span> },
-              { key: 'e', header: 'Lease ends', render: (r) => r.end_date ?? '—' },
-              { key: 'r', header: 'Rent', align: 'right', render: (r) => (r.monthly_rent ? money(r.monthly_rent) : '—') },
+              { key: 'e', header: 'Lease ends', render: (r) => r.end_date ?? 'n/a' },
+              { key: 'r', header: 'Rent', align: 'right', render: (r) => (r.monthly_rent ? money(r.monthly_rent) : 'n/a') },
               { key: 'm', header: 'Market', align: 'right', render: (r) => money(r.market_rent) },
               { key: 'b', header: 'Balance', align: 'right', render: (r) => (
-                <span className={r.balance > 0 ? 'font-semibold text-critical' : ''}>{money(r.balance)}</span>
+                <span className={r.balance > 0 ? 'font-medium text-critical' : ''}>{money(r.balance)}</span>
               ) },
             ]} />
             <div className="mt-2 flex items-center justify-end gap-2 text-sm">
               <button type="button" disabled={page === 0} onClick={() => setPage((p) => p - 1)}
-                      className="rounded border border-border px-2 py-0.5 disabled:opacity-40">Prev</button>
+                      className="btn btn-sm">Prev</button>
               <span className="text-muted">{page + 1} / {Math.max(1, Math.ceil(total / PAGE))}</span>
               <button type="button" disabled={(page + 1) * PAGE >= total} onClick={() => setPage((p) => p + 1)}
-                      className="rounded border border-border px-2 py-0.5 disabled:opacity-40">Next</button>
+                      className="btn btn-sm">Next</button>
             </div>
           </>
         } />
