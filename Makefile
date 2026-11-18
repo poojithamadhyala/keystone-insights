@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: help install env up up-all down logs seed demo test lint typecheck check lock-web secrets hooks docs ingest rag-questions rag-review bench-rag eval-agent bench-digest seed-remote bench-a11y
+.PHONY: help install env up down logs seed demo test lint typecheck check lock-web secrets hooks docs ingest rag-questions rag-review bench-rag eval-agent bench-digest seed-remote bench-a11y
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -12,14 +12,11 @@ install: env  ## Install Python + web dependencies locally
 	uv sync
 	cd web && npm ci
 
-up: env  ## Start core services (postgres, redis, api, web)
+up: env  ## Start services (postgres, api, web)
 	$(COMPOSE) up -d --build
 
-up-all: env  ## Start every profile (graph, ml, monitoring)
-	$(COMPOSE) --profile graph --profile ml --profile monitoring up -d --build
-
 down:  ## Stop all services
-	$(COMPOSE) --profile graph --profile ml --profile monitoring down
+	$(COMPOSE) down
 
 logs:  ## Tail service logs
 	$(COMPOSE) logs -f --tail=100

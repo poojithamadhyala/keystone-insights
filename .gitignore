@@ -19,12 +19,9 @@ web/dist/
 
 # artifacts (regenerable from seeded scripts)
 artifacts/
-mlruns/
-mlartifacts/
 data/out/
-ml/feature_repo/data/
-*.parquet
-ray_results/
+# `npm run screenshots` output: attach to PRs, don't commit (the README uses docs/demo.gif)
+docs/screenshots/
 
 # os / editor
 .DS_Store
