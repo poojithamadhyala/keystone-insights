@@ -27,7 +27,12 @@ OUT = Path("artifacts/digest/bench.json")
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", type=int, default=10)
-    n = ap.parse_args().n
+    ap.add_argument("--render", action="store_true", help="rebuild the section from the last run")
+    args = ap.parse_args()
+    if args.render:  # no API calls
+        update_benchmarks("digest", render(json.loads(OUT.read_text())["meta"]))
+        return
+    n = args.n
     s = get_settings()
     client = anthropic.Anthropic(api_key=s.anthropic_api_key)
     engine = get_engine()
@@ -56,7 +61,7 @@ def render(m: dict) -> str:
         "- **Command:** `make bench-digest`",
         f"- **Date:** {m['date']}",
         f"- **Model / prompt:** `{m['model']}` / "
-        f"`prompts/digest/narrative_{m['prompt_version']}.md`",
+        f"`backend/prompts/digest/narrative_{m['prompt_version']}.md`",
         f"- **Dataset:** digest for the week ending {m['as_of']}, built {m['n']} times",
         "",
         "| Narratives passing the number check | Rejected numbers | Cost |",

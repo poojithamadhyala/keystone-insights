@@ -1,4 +1,4 @@
-// Typed client for the FastAPI KPI endpoints (mirrors api/kpis/router.py models).
+// Typed client for the FastAPI KPI endpoints (mirrors backend/api/kpis/router.py models).
 
 /** API origin: the Vite dev proxy locally ('/api'), the Render URL on the public demo. */
 export const API_BASE = ((import.meta.env.VITE_API_URL as string | undefined) ?? '/api').replace(/\/$/, '')

@@ -1,4 +1,6 @@
 COMPOSE := docker compose -f infra/docker-compose.yml --env-file .env
+# Python commands run inside backend/ (its own pyproject, lockfile and venv).
+PY := cd backend && uv run
 
 .PHONY: help install env up down logs seed demo test lint typecheck check lock-web secrets hooks docs ingest rag-questions rag-review bench-rag eval-agent bench-digest seed-remote bench-a11y
 
@@ -9,7 +11,7 @@ env:  ## Create .env from .env.example if missing
 	@test -f .env || cp .env.example .env
 
 install: env  ## Install Python + web dependencies locally
-	uv sync
+	cd backend && uv sync
 	cd web && npm ci
 
 up: env  ## Start services (postgres, api, web)
@@ -28,16 +30,16 @@ demo: up seed  ## Start the stack with data and print URLs (grows with each mile
 	@echo "Dashboard: http://localhost:5173   API docs: http://localhost:8000/docs"
 
 test:  ## Python + web unit tests
-	uv run pytest -q
+	$(PY) pytest -q
 	cd web && npm test
 
 lint:  ## ruff + eslint
-	uv run ruff check .
-	uv run ruff format --check .
+	$(PY) ruff check .
+	$(PY) ruff format --check .
 	cd web && npm run lint
 
 typecheck:  ## mypy + tsc
-	uv run mypy .
+	$(PY) mypy .
 	cd web && npm run typecheck
 
 check: secrets lint typecheck test  ## Everything CI runs
@@ -52,9 +54,9 @@ lock-web:  ## Regenerate web/package-lock.json with the same npm as CI/Docker (D
 	docker run --rm -v "$$PWD/web:/app" -w /app node:24-alpine npm install --package-lock-only
 
 # ---------------------------------------------------------------- RAG (milestone 2)
-RAG := uv run --group rag
+RAG := cd backend && uv run --group rag
 
-docs:  ## Regenerate the synthetic documents into data/out/docs
+docs:  ## Regenerate the synthetic documents into backend/data/out/docs
 	$(RAG) python -m rag.documents
 
 ingest:  ## Parse, chunk, embed and upsert documents into Pinecone (needs PINECONE_API_KEY)
@@ -63,7 +65,7 @@ ingest:  ## Parse, chunk, embed and upsert documents into Pinecone (needs PINECO
 rag-questions:  ## Re-generate eval candidates with Claude (costs about $1, see BENCHMARKS.md)
 	$(RAG) python -m evals.rag.generate_questions
 
-rag-review:  ## Apply verdicts from evals/rag/REVIEW.md to questions.jsonl
+rag-review:  ## Apply verdicts from backend/evals/rag/REVIEW.md to questions.jsonl
 	$(RAG) python -m evals.rag.apply_review
 
 bench-rag:  ## RAG ablation ladder: Recall@5 / MRR / nDCG@10 -> BENCHMARKS.md
@@ -75,12 +77,12 @@ eval-agent:  ## Live agent eval (about $0.06 per case) -> BENCHMARKS.md
 
 # ---------------------------------------------------------------- Digest
 bench-digest:  ## Build the digest 10x and report how often the narrative passes the number check
-	uv run python -m evals.digest.bench -n 10
+	$(PY) python -m evals.digest.bench -n 10
 
 # ---------------------------------------------------------------- Public demo
 seed-remote:  ## Migrate + seed a hosted DB: DATABASE_URL='postgresql://...' make seed-remote
 	@test -n "$$DATABASE_URL" || (echo "Set DATABASE_URL to the Neon connection string"; exit 1)
-	uv run python -m data.seed
+	$(PY) python -m data.seed
 
 bench-a11y:  ## Lighthouse accessibility for the main pages (app must be running; WEB_URL to target)
-	uv run python -m evals.a11y_bench
+	$(PY) python -m evals.a11y_bench
